@@ -14,6 +14,11 @@ Features I want to have in this language:
 * Static reflection, a.k.a. datatype generics
 * Algebraic effects
 
+More ideas:
+
+* It will be written in Go
+* Uses no third-party Go libraries in the project
+
 ## License
 
 MIT
