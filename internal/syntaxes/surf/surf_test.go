@@ -4,9 +4,12 @@ import "testing"
 
 func TestParse(t *testing.T) {
 	const (
-		text = "def"
-		kind = 114514
+		text = "  \n  def  main   "
 	)
-	ok := Keyword(kind, "def").Run(NewState(text)).Token(kind)
-	println(ok)
+	s := Seq(
+		Keyword(42, "def"),
+		Keyword(69, "main"),
+	).
+		Run(NewState(text))
+	println(s)
 }

@@ -19,9 +19,9 @@ const (
 type State interface {
 	Pos() int
 	Rune(r rune) bool
-	Token(kind TokenKind) bool
-
 	SetToken(kind TokenKind, start int) State
+	IsError() bool
+	SkipSpaces()
 }
 
 type Options interface {
@@ -58,9 +58,25 @@ func (p *state) SetToken(kind TokenKind, start int) State {
 		Start: start,
 		End:   p.pos,
 		Line:  p.ln,
-		Col:   p.col,
+		Col:   p.col - (p.pos - start),
 	}
 	return p
+}
+
+func (p *state) IsError() bool { return p.cur.Kind == Error }
+
+func (p *state) SkipSpaces() {
+	if p.pos >= len(p.text) {
+		return
+	}
+
+	for {
+		r := p.text[p.pos]
+		if !p.opt.IsSpace(r) {
+			return
+		}
+		p.Rune(r)
+	}
 }
 
 func SetError(p State, start int) State { return p.SetToken(Error, start) }
@@ -86,10 +102,8 @@ func (p *state) Rune(r rune) bool {
 	return c == r
 }
 
-func (p *state) Token(kind TokenKind) bool { return p.cur.Kind == kind }
-
 type Parser interface {
-	Run(p State) State
+	Run(s State) State
 }
 
 type keywordParser struct {
@@ -97,14 +111,33 @@ type keywordParser struct {
 	word string
 }
 
-func (h *keywordParser) Run(p State) State {
-	start := p.Pos()
-	for _, c := range h.word {
-		if !p.Rune(c) {
-			return SetError(p, start)
+func Keyword(kind TokenKind, word string) Parser { return &keywordParser{kind, word} }
+
+func (p *keywordParser) Run(s State) State {
+	start := s.Pos()
+	for _, c := range p.word {
+		if !s.Rune(c) {
+			return SetError(s, start)
 		}
 	}
-	return p.SetToken(h.kind, start)
+	return s.SetToken(p.kind, start)
 }
 
-func Keyword(kind TokenKind, word string) Parser { return &keywordParser{kind, word} }
+type seqParser struct {
+	parsers []Parser
+}
+
+func Seq(parsers ...Parser) Parser {
+	return &seqParser{parsers}
+}
+
+func (p *seqParser) Run(s State) State {
+	for _, parser := range p.parsers {
+		s.SkipSpaces()
+		s = parser.Run(s)
+		if s.IsError() {
+			return s
+		}
+	}
+	return s
+}
