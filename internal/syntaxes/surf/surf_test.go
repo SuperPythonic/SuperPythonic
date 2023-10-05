@@ -3,7 +3,10 @@ package surf
 import "testing"
 
 func TestParse(t *testing.T) {
-	const text = "def"
-	s := Keyword(114514, "def").Run(NewState(text))
-	println(s)
+	const (
+		text = "def"
+		kind = 114514
+	)
+	ok := Keyword(kind, "def").Run(NewState(text)).Token(kind)
+	println(ok)
 }
