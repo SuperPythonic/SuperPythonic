@@ -22,7 +22,6 @@ type State interface {
 	Rune(r rune) bool
 	SetToken(kind TokenKind, start int) State
 	Cur() *Token
-	IsError() bool
 	SkipSpaces()
 }
 
@@ -43,7 +42,13 @@ func NewState(text string) State {
 }
 
 func NewStateWith(text string, opt Options) State {
-	return &state{opt: opt, text: []rune(text), ln: 1, col: 1}
+	return &state{
+		opt:  opt,
+		text: []rune(text),
+		ln:   1,
+		col:  1,
+		cur:  &Token{Kind: SOI},
+	}
 }
 
 type opt struct{}
@@ -67,14 +72,12 @@ func (p *state) SetToken(kind TokenKind, start int) State {
 
 func (p *state) Cur() *Token { return p.cur }
 
-func (p *state) IsError() bool { return p.cur != nil && p.cur.Kind == Error }
-
 func (p *state) SkipSpaces() {
-	if p.pos >= len(p.text) {
-		return
-	}
-
 	for {
+		if p.pos >= len(p.text) {
+			return
+		}
+
 		r := p.text[p.pos]
 		if !p.opt.IsSpace(r) {
 			return
@@ -83,7 +86,10 @@ func (p *state) SkipSpaces() {
 	}
 }
 
-func SetError(p State, start int) State { return p.SetToken(Error, start) }
+func SetError(s State, start int) State { return s.SetToken(Error, start) }
+func IsSOI(s State) bool                { return s.Cur().Kind == SOI }
+func IsEOI(s State) bool                { return s.Cur().Kind == EOI }
+func IsError(s State) bool              { return s.Cur().Kind == Error }
 
 func (p *state) Rune(r rune) bool {
 	if p.pos >= len(p.text) {
@@ -115,8 +121,19 @@ type startParser struct{}
 func Start() Parser { return new(startParser) }
 
 func (p *startParser) Run(s State) State {
-	if pos := s.Pos(); pos != 0 {
-		return SetError(s, pos)
+	if !IsSOI(s) {
+		return SetError(s, s.Pos())
+	}
+	return s
+}
+
+type endParser struct{}
+
+func End() Parser { return new(endParser) }
+
+func (e *endParser) Run(s State) State {
+	if !IsEOI(s) {
+		return SetError(s, s.Pos())
 	}
 	return s
 }
@@ -149,7 +166,7 @@ func Seq(parsers ...Parser) Parser {
 func (p *seqParser) Run(s State) State {
 	for i, parser := range p.parsers {
 		s = parser.Run(s)
-		if s.IsError() {
+		if IsError(s) {
 			return s
 		}
 		if i+1 < len(p.parsers) {

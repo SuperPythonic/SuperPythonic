@@ -10,8 +10,9 @@ func TestParse(t *testing.T) {
 		Start(),
 		Keyword(42, "def"),
 		Keyword(69, "main"),
+		End(),
 	).
-		Run(NewState(text)); s.Cur().Kind != 69 {
+		Run(NewState(text)); s.Cur().Kind != EOI {
 		t.Fatal(s)
 	}
 }
