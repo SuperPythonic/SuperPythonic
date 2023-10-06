@@ -25,6 +25,34 @@ func NewStateWith(text string, opt parsing.Options) *State {
 
 func (p *State) Pos() int { return p.pos }
 
+func (p *State) Loc() (pos, ln, col int) { return p.pos, p.ln, p.col }
+func (p *State) SetLoc(pos, ln, col int) {
+	p.pos = pos
+	p.ln = ln
+	p.col = col
+}
+
+func (p *State) Rune(r rune) bool {
+	if p.pos >= len(p.text) {
+		return false
+	}
+
+	c := p.text[p.pos]
+	p.pos++
+	p.col++
+
+	if p.opt.IsNewline(c) {
+		p.ln++
+		p.col = 1
+	}
+
+	if p.pos == len(p.text) {
+		p.SetToken(parsing.EOI, p.pos)
+	}
+
+	return c == r
+}
+
 func (p *State) SetToken(kind parsing.TokenKind, start int) parsing.State {
 	p.cur = &parsing.Token{
 		Kind:  kind,
@@ -50,27 +78,6 @@ func (p *State) SkipSpaces() {
 		}
 		p.Rune(r)
 	}
-}
-
-func (p *State) Rune(r rune) bool {
-	if p.pos >= len(p.text) {
-		return false
-	}
-
-	c := p.text[p.pos]
-	p.pos++
-	p.col++
-
-	if p.opt.IsNewline(c) {
-		p.ln++
-		p.col = 1
-	}
-
-	if p.pos == len(p.text) {
-		p.SetToken(parsing.EOI, p.pos)
-	}
-
-	return c == r
 }
 
 func SetError(s parsing.State, start int) parsing.State { return s.SetToken(parsing.Error, start) }

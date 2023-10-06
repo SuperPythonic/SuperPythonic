@@ -8,8 +8,8 @@ import (
 )
 
 func TestParse(t *testing.T) {
-	const text = "  \n  def  main   "
-	if s := Prog().Run(parsers.NewState(text)); s.Cur().Kind != parsing.EOI {
+	const text = "  \n  class  "
+	if s := Prog().Parse(parsers.NewState(text)); s.Cur().Kind != parsing.EOI {
 		t.Fatal(s)
 	}
 }

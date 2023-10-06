@@ -9,4 +9,5 @@ var (
 	End     = parsers.End
 	Keyword = parsers.Keyword
 	Seq     = parsers.Seq
+	Choice  = parsers.Choice
 )
