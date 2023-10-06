@@ -22,7 +22,7 @@ func NewStateWith(text string, opt parsing.Options) *State {
 		text: []rune(text),
 		ln:   1,
 		col:  1,
-		cur:  &parsing.Token{Kind: parsing.SOI},
+		cur:  &parsing.Token{Kind: parsing.SOI, Line: 1, Col: 1},
 	}
 }
 
@@ -37,8 +37,15 @@ func (p *State) Reset(pos, ln, col int) {
 }
 
 func (p *State) Rune(r rune) bool {
+	if c, ok := p.Next(); ok {
+		return c == r
+	}
+	return false
+}
+
+func (p *State) Next() (rune, bool) {
 	if p.pos >= len(p.text) {
-		return false
+		return 0, false
 	}
 
 	c := p.text[p.pos]
@@ -54,7 +61,7 @@ func (p *State) Rune(r rune) bool {
 		p.Set(parsing.EOI, p.pos)
 	}
 
-	return c == r
+	return c, true
 }
 
 func (p *State) Set(kind parsing.TokenKind, start int) parsing.State {

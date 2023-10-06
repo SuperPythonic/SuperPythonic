@@ -7,6 +7,7 @@ const (
 	SOI
 	EOI
 	Keyword
+	Lowercase
 )
 
 func (k TokenKind) String() string {
@@ -34,6 +35,8 @@ type State interface {
 	Reset(pos, ln, col int)
 
 	Rune(r rune) bool
+	Next() (rune, bool)
+
 	Set(kind TokenKind, start int) State
 	Commit() State
 	Cur() *Token

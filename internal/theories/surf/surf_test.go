@@ -8,7 +8,7 @@ import (
 )
 
 func TestParse(t *testing.T) {
-	const text = "  \n  class  "
+	const text = "  \n  def   hello_world  "
 	s := Prog().Parse(parsers.NewState(text))
 	if s.Cur().Kind != parsing.EOI {
 		t.Fatal(s)

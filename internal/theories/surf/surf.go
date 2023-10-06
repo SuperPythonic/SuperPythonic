@@ -16,6 +16,11 @@ func Prog() parsing.Parser {
 	)
 }
 
-func Def() parsing.Parser { return parsers.Keyword("def") }
+func Def() parsing.Parser {
+	return parsers.Seq(
+		parsers.Keyword("def"),
+		parsers.Lowercase(),
+	)
+}
 
 func Class() parsing.Parser { return parsers.Keyword("class") }

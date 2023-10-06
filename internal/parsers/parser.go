@@ -1,6 +1,10 @@
 package parsers
 
-import "github.com/SuperPythonic/SuperPythonic/pkg/parsing"
+import (
+	"unicode"
+
+	"github.com/SuperPythonic/SuperPythonic/pkg/parsing"
+)
 
 type start struct{}
 
@@ -36,6 +40,27 @@ func (p kw) Parse(s parsing.State) parsing.State {
 		}
 	}
 	return s.Set(parsing.Keyword, start).Commit()
+}
+
+type lc struct{}
+
+func Lowercase() parsing.Parser { return new(lc) }
+
+func (p *lc) Parse(s parsing.State) parsing.State {
+	start := s.Pos()
+	for {
+		c, ok := s.Next()
+		if !ok {
+			break
+		}
+		if !unicode.IsLower(c) && c != '_' {
+			break
+		}
+	}
+	if start == s.Pos() {
+		return SetError(s, start)
+	}
+	return s.Set(parsing.Lowercase, start).Commit()
 }
 
 type seq struct{ parsers []parsing.Parser }
