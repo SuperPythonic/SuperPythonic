@@ -41,13 +41,16 @@ type State interface {
 	Eat(e rune) bool
 
 	Set(kind TokenKind, start int) State
-	Commit() State
 	Cur() *Token
-	Committed() []*Token
 	Text(t *Token) string
 
 	SkipSpaces()
 }
+
+func SetError(s State, start int) State { return s.Set(Error, start) }
+func IsSOI(s State) bool                { return s.Cur().Kind == SOI }
+func IsEOI(s State) bool                { return s.Cur().Kind == EOI }
+func IsError(s State) bool              { return s.Cur().Kind == Error }
 
 type Options interface {
 	IsSpace(r rune) bool

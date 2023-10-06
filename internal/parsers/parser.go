@@ -11,10 +11,10 @@ type start struct{}
 func Start() parsing.Parser { return new(start) }
 
 func (p *start) Parse(s parsing.State) parsing.State {
-	if !IsSOI(s) {
-		return SetError(s, s.Pos())
+	if !parsing.IsSOI(s) {
+		return parsing.SetError(s, s.Pos())
 	}
-	return s.Commit()
+	return s
 }
 
 type end struct{}
@@ -22,10 +22,10 @@ type end struct{}
 func End() parsing.Parser { return new(end) }
 
 func (e *end) Parse(s parsing.State) parsing.State {
-	if !IsEOI(s) {
-		return SetError(s, s.Pos())
+	if !parsing.IsEOI(s) {
+		return parsing.SetError(s, s.Pos())
 	}
-	return s.Commit()
+	return s
 }
 
 type kw string
@@ -36,10 +36,10 @@ func (p kw) Parse(s parsing.State) parsing.State {
 	start := s.Pos()
 	for _, c := range p {
 		if !s.Eat(c) {
-			return SetError(s, start)
+			return parsing.SetError(s, start)
 		}
 	}
-	return s.Set(parsing.Keyword, start).Commit()
+	return s.Set(parsing.Keyword, start)
 }
 
 type Ident interface{ IsRuneValid(r rune) bool }
@@ -69,9 +69,9 @@ func (p *id) Parse(s parsing.State) parsing.State {
 	}
 
 	if start == s.Pos() {
-		return SetError(s, start)
+		return parsing.SetError(s, start)
 	}
-	return s.Set(parsing.Ident, start).Commit()
+	return s.Set(parsing.Ident, start)
 }
 
 type lc struct{}
@@ -112,7 +112,7 @@ func Seq(parsers ...parsing.Parser) parsing.Parser { return &seq{parsers} }
 
 func (p *seq) Parse(s parsing.State) parsing.State {
 	for i, parser := range p.parsers {
-		if s = parser.Parse(s); IsError(s) {
+		if s = parser.Parse(s); parsing.IsError(s) {
 			return s
 		}
 		if i+1 < len(p.parsers) {
@@ -131,7 +131,7 @@ func (p *choice) Parse(s parsing.State) parsing.State {
 	prev := s.Cur()
 	// TODO: Collect all failed states for error messages.
 	for _, parser := range p.parsers {
-		if s = parser.Parse(s); !IsTerminated(s) {
+		if s = parser.Parse(s); !parsing.IsError(s) {
 			return s
 		}
 		s.Reset(pos, ln, col, prev)
@@ -151,8 +151,11 @@ func (p *many) Parse(s parsing.State) parsing.State {
 	for {
 		pos, ln, col = s.Loc()
 		prev = s.Cur()
-		if s = p.parser.Parse(s); IsTerminated(s) {
+		if s = p.parser.Parse(s); parsing.IsError(s) {
 			s.Reset(pos, ln, col, prev)
+			break
+		}
+		if parsing.IsEOI(s) {
 			break
 		}
 		s.SkipSpaces()

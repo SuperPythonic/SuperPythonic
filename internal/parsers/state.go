@@ -3,13 +3,10 @@ package parsers
 import "github.com/SuperPythonic/SuperPythonic/pkg/parsing"
 
 type State struct {
-	opt  parsing.Options
-	text []rune
-
+	opt          parsing.Options
+	text         []rune
 	pos, ln, col int
-
-	cur       *parsing.Token
-	committed []*parsing.Token
+	cur          *parsing.Token
 }
 
 func NewState(text string) *State {
@@ -82,20 +79,7 @@ func (p *State) Set(kind parsing.TokenKind, start int) parsing.State {
 	return p
 }
 
-func (p *State) Commit() parsing.State {
-	if p.cur == nil {
-		panic("current token is nil")
-	}
-	if p.cur.Kind == parsing.Error {
-		panic("cannot commit error token")
-	}
-	p.committed = append(p.committed, p.cur)
-	return p
-}
-
 func (p *State) Cur() *parsing.Token { return p.cur }
-
-func (p *State) Committed() []*parsing.Token { return p.committed }
 
 func (p *State) Text(t *parsing.Token) string { return string(p.text[t.Start:t.End]) }
 
@@ -112,9 +96,3 @@ func (p *State) SkipSpaces() {
 		p.Eat(r)
 	}
 }
-
-func SetError(s parsing.State, start int) parsing.State { return s.Set(parsing.Error, start) }
-func IsSOI(s parsing.State) bool                        { return s.Cur().Kind == parsing.SOI }
-func IsEOI(s parsing.State) bool                        { return s.Cur().Kind == parsing.EOI }
-func IsError(s parsing.State) bool                      { return s.Cur().Kind == parsing.Error }
-func IsTerminated(s parsing.State) bool                 { return IsError(s) || IsEOI(s) }

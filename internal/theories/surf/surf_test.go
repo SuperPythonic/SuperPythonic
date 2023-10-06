@@ -1,7 +1,6 @@
 package surf
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/SuperPythonic/SuperPythonic/pkg/parsing"
@@ -16,9 +15,6 @@ def fn_0 ( ) :
 def fn_2 ( aaa, bbb ):
     `
 	s := Parse(text)
-	for _, token := range s.Committed() {
-		fmt.Printf("%s\t%q\n", token.Kind, s.Text(token))
-	}
 	if s.Cur().Kind == parsing.Error {
 		t.Fatal(s)
 	}
