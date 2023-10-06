@@ -11,7 +11,8 @@ type Token struct {
 
 const (
 	Error TokenKind = iota
-	EOF
+	SOI
+	EOI
 	WHITESPACE
 	NEWLINE
 )
@@ -20,6 +21,7 @@ type State interface {
 	Pos() int
 	Rune(r rune) bool
 	SetToken(kind TokenKind, start int) State
+	Cur() *Token
 	IsError() bool
 	SkipSpaces()
 }
@@ -63,7 +65,9 @@ func (p *state) SetToken(kind TokenKind, start int) State {
 	return p
 }
 
-func (p *state) IsError() bool { return p.cur.Kind == Error }
+func (p *state) Cur() *Token { return p.cur }
+
+func (p *state) IsError() bool { return p.cur != nil && p.cur.Kind == Error }
 
 func (p *state) SkipSpaces() {
 	if p.pos >= len(p.text) {
@@ -96,7 +100,7 @@ func (p *state) Rune(r rune) bool {
 	}
 
 	if p.pos == len(p.text) {
-		p.SetToken(EOF, p.pos)
+		p.SetToken(EOI, p.pos)
 	}
 
 	return c == r
@@ -104,6 +108,17 @@ func (p *state) Rune(r rune) bool {
 
 type Parser interface {
 	Run(s State) State
+}
+
+type startParser struct{}
+
+func Start() Parser { return new(startParser) }
+
+func (p *startParser) Run(s State) State {
+	if pos := s.Pos(); pos != 0 {
+		return SetError(s, pos)
+	}
+	return s
 }
 
 type keywordParser struct {
@@ -132,11 +147,13 @@ func Seq(parsers ...Parser) Parser {
 }
 
 func (p *seqParser) Run(s State) State {
-	for _, parser := range p.parsers {
-		s.SkipSpaces()
+	for i, parser := range p.parsers {
 		s = parser.Run(s)
 		if s.IsError() {
 			return s
+		}
+		if i+1 < len(p.parsers) {
+			s.SkipSpaces()
 		}
 	}
 	return s
