@@ -29,10 +29,11 @@ func NewStateWith(text string, opt parsing.Options) *State {
 func (p *State) Pos() int { return p.pos }
 
 func (p *State) Loc() (pos, ln, col int) { return p.pos, p.ln, p.col }
-func (p *State) Reset(pos, ln, col int) {
+func (p *State) Reset(pos, ln, col int, t *parsing.Token) {
 	p.pos = pos
 	p.ln = ln
 	p.col = col
+	p.cur = t
 }
 
 func (p *State) Peek() (rune, bool) {

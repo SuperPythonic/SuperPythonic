@@ -32,7 +32,7 @@ type Token struct {
 type State interface {
 	Pos() int
 	Loc() (pos, ln, col int)
-	Reset(pos, ln, col int)
+	Reset(pos, ln, col int, t *Token)
 
 	Peek() (rune, bool)
 	Next() (rune, bool)

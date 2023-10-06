@@ -1,6 +1,9 @@
 package parsers
 
-import "github.com/SuperPythonic/SuperPythonic/internal/parsers"
+import (
+	"github.com/SuperPythonic/SuperPythonic/internal/parsers"
+	"github.com/SuperPythonic/SuperPythonic/pkg/parsing"
+)
 
 var (
 	NewState = parsers.NewState
@@ -16,4 +19,9 @@ var (
 
 	Seq    = parsers.Seq
 	Choice = parsers.Choice
+	Many   = parsers.Many
 )
+
+func Parse(parser parsing.Parser, text string) parsing.State {
+	return parser.Parse(NewState(text))
+}

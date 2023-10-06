@@ -128,12 +128,34 @@ func Choice(parsers ...parsing.Parser) parsing.Parser { return &choice{parsers} 
 
 func (p *choice) Parse(s parsing.State) parsing.State {
 	pos, ln, col := s.Loc()
+	prev := s.Cur()
 	// TODO: Collect all failed states for error messages.
 	for _, parser := range p.parsers {
 		if s = parser.Parse(s); !IsError(s) {
 			return s
 		}
-		s.Reset(pos, ln, col)
+		s.Reset(pos, ln, col, prev)
+	}
+	return s
+}
+
+type many struct{ parser parsing.Parser }
+
+func Many(parser parsing.Parser) parsing.Parser { return &many{parser} }
+
+func (p *many) Parse(s parsing.State) parsing.State {
+	var (
+		pos, ln, col int
+		prev         *parsing.Token
+	)
+	for {
+		pos, ln, col = s.Loc()
+		prev = s.Cur()
+		if s = p.parser.Parse(s); IsError(s) {
+			s.Reset(pos, ln, col, prev)
+			break
+		}
+		s.SkipSpaces()
 	}
 	return s
 }
