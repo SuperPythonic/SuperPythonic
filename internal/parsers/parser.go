@@ -2,36 +2,36 @@ package parsers
 
 import "github.com/SuperPythonic/SuperPythonic/pkg/parsing"
 
-type startParser struct{}
+type start struct{}
 
-func Start() parsing.Parser { return new(startParser) }
+func Start() parsing.Parser { return new(start) }
 
-func (p *startParser) Run(s parsing.State) parsing.State {
+func (p *start) Run(s parsing.State) parsing.State {
 	if !IsSOI(s) {
 		return SetError(s, s.Pos())
 	}
 	return s
 }
 
-type endParser struct{}
+type end struct{}
 
-func End() parsing.Parser { return new(endParser) }
+func End() parsing.Parser { return new(end) }
 
-func (e *endParser) Run(s parsing.State) parsing.State {
+func (e *end) Run(s parsing.State) parsing.State {
 	if !IsEOI(s) {
 		return SetError(s, s.Pos())
 	}
 	return s
 }
 
-type keywordParser struct {
+type kw struct {
 	kind parsing.TokenKind
 	word string
 }
 
-func Keyword(kind parsing.TokenKind, word string) parsing.Parser { return &keywordParser{kind, word} }
+func Keyword(kind parsing.TokenKind, word string) parsing.Parser { return &kw{kind, word} }
 
-func (p *keywordParser) Run(s parsing.State) parsing.State {
+func (p *kw) Run(s parsing.State) parsing.State {
 	start := s.Pos()
 	for _, c := range p.word {
 		if !s.Rune(c) {
@@ -41,15 +41,11 @@ func (p *keywordParser) Run(s parsing.State) parsing.State {
 	return s.SetToken(p.kind, start)
 }
 
-type seqParser struct {
-	parsers []parsing.Parser
-}
+type seq struct{ parsers []parsing.Parser }
 
-func Seq(parsers ...parsing.Parser) parsing.Parser {
-	return &seqParser{parsers}
-}
+func Seq(parsers ...parsing.Parser) parsing.Parser { return &seq{parsers} }
 
-func (p *seqParser) Run(s parsing.State) parsing.State {
+func (p *seq) Run(s parsing.State) parsing.State {
 	for i, parser := range p.parsers {
 		s = parser.Run(s)
 		if IsError(s) {
