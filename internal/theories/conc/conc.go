@@ -3,7 +3,7 @@ package conc
 import (
 	"fmt"
 
-	"github.com/SuperPythonic/SuperPythonic/internal/syntaxes"
+	"github.com/SuperPythonic/SuperPythonic/internal/theories"
 )
 
 type (
@@ -16,18 +16,18 @@ type (
 	Def interface {
 		fmt.Stringer
 
-		Name() syntaxes.Var
+		Name() theories.Var
 		Params() []Param
-		Ret() Term
-		Body() Term
+		Ret() Expr
+		Body() Expr
 	}
 
 	Param interface {
-		Name() syntaxes.Var
-		Type() Term
+		Name() theories.Var
+		Type() Expr
 	}
 
-	Term interface {
+	Expr interface {
 		fmt.Stringer
 	}
 )

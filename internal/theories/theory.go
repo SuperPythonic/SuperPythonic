@@ -1,4 +1,4 @@
-package syntaxes
+package theories
 
 import "fmt"
 
