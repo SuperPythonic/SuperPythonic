@@ -88,6 +88,10 @@ func (p *State) Commit() parsing.State {
 
 func (p *State) Cur() *parsing.Token { return p.cur }
 
+func (p *State) All() []*parsing.Token { return p.committed }
+
+func (p *State) Text(t *parsing.Token) string { return string(p.text[t.Start:t.End]) }
+
 func (p *State) SkipSpaces() {
 	for {
 		if p.pos >= len(p.text) {

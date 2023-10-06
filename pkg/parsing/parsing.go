@@ -7,7 +7,7 @@ const (
 	SOI
 	EOI
 	Keyword
-	Lowercase
+	Ident
 )
 
 func (k TokenKind) String() string {
@@ -40,6 +40,8 @@ type State interface {
 	Set(kind TokenKind, start int) State
 	Commit() State
 	Cur() *Token
+	All() []*Token
+	Text(t *Token) string
 
 	SkipSpaces()
 }

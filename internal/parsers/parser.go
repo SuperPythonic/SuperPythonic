@@ -42,26 +42,45 @@ func (p kw) Parse(s parsing.State) parsing.State {
 	return s.Set(parsing.Keyword, start).Commit()
 }
 
-type lc struct{}
+type Ident interface{ IsRuneValid(r rune) bool }
 
-func Lowercase() parsing.Parser { return new(lc) }
+type id struct{ f Ident }
 
-func (p *lc) Parse(s parsing.State) parsing.State {
+func (p *id) Parse(s parsing.State) parsing.State {
 	start := s.Pos()
+	first := true
+
 	for {
-		c, ok := s.Next()
+		r, ok := s.Next()
 		if !ok {
 			break
 		}
-		if !unicode.IsLower(c) && c != '_' {
+
+		if first && unicode.IsDigit(r) {
+			break
+		}
+		first = false
+
+		if !p.f.IsRuneValid(r) {
 			break
 		}
 	}
+
 	if start == s.Pos() {
 		return SetError(s, start)
 	}
-	return s.Set(parsing.Lowercase, start).Commit()
+	return s.Set(parsing.Ident, start).Commit()
 }
+
+type lc struct{}
+
+func Lowercase() parsing.Parser     { return &id{new(lc)} }
+func (*lc) IsRuneValid(r rune) bool { return unicode.IsLower(r) || r == '_' }
+
+type up struct{}
+
+func Uppercase() parsing.Parser     { return &id{new(up)} }
+func (*up) IsRuneValid(r rune) bool { return unicode.IsUpper(r) || r == '_' }
 
 type seq struct{ parsers []parsing.Parser }
 

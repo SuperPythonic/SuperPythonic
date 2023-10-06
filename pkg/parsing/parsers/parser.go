@@ -9,6 +9,7 @@ var (
 	End       = parsers.End
 	Keyword   = parsers.Keyword
 	Lowercase = parsers.Lowercase
+	Uppercase = parsers.Uppercase
 	Seq       = parsers.Seq
 	Choice    = parsers.Choice
 )
