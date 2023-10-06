@@ -3,10 +3,13 @@ package parsers
 import "github.com/SuperPythonic/SuperPythonic/pkg/parsing"
 
 type State struct {
-	opt          parsing.Options
-	text         []rune
+	opt  parsing.Options
+	text []rune
+
 	pos, ln, col int
-	cur          *parsing.Token
+
+	cur       *parsing.Token
+	committed []*parsing.Token
 }
 
 func NewState(text string) *State {
@@ -26,10 +29,11 @@ func NewStateWith(text string, opt parsing.Options) *State {
 func (p *State) Pos() int { return p.pos }
 
 func (p *State) Loc() (pos, ln, col int) { return p.pos, p.ln, p.col }
-func (p *State) SetLoc(pos, ln, col int) {
+func (p *State) Reset(pos, ln, col int) {
 	p.pos = pos
 	p.ln = ln
 	p.col = col
+	p.cur = nil
 }
 
 func (p *State) Rune(r rune) bool {
@@ -47,13 +51,13 @@ func (p *State) Rune(r rune) bool {
 	}
 
 	if p.pos == len(p.text) {
-		p.SetToken(parsing.EOI, p.pos)
+		p.Set(parsing.EOI, p.pos)
 	}
 
 	return c == r
 }
 
-func (p *State) SetToken(kind parsing.TokenKind, start int) parsing.State {
+func (p *State) Set(kind parsing.TokenKind, start int) parsing.State {
 	p.cur = &parsing.Token{
 		Kind:  kind,
 		Start: start,
@@ -61,6 +65,17 @@ func (p *State) SetToken(kind parsing.TokenKind, start int) parsing.State {
 		Line:  p.ln,
 		Col:   p.col - (p.pos - start),
 	}
+	return p
+}
+
+func (p *State) Commit() parsing.State {
+	if p.cur == nil {
+		panic("current token is nil")
+	}
+	if p.cur.Kind == parsing.Error {
+		panic("cannot commit error token")
+	}
+	p.committed = append(p.committed, p.cur)
 	return p
 }
 
@@ -80,7 +95,7 @@ func (p *State) SkipSpaces() {
 	}
 }
 
-func SetError(s parsing.State, start int) parsing.State { return s.SetToken(parsing.Error, start) }
+func SetError(s parsing.State, start int) parsing.State { return s.Set(parsing.Error, start) }
 func IsSOI(s parsing.State) bool                        { return s.Cur().Kind == parsing.SOI }
 func IsEOI(s parsing.State) bool                        { return s.Cur().Kind == parsing.EOI }
 func IsError(s parsing.State) bool                      { return s.Cur().Kind == parsing.Error }

@@ -10,7 +10,7 @@ func (p *start) Parse(s parsing.State) parsing.State {
 	if !IsSOI(s) {
 		return SetError(s, s.Pos())
 	}
-	return s
+	return s.Commit()
 }
 
 type end struct{}
@@ -21,7 +21,7 @@ func (e *end) Parse(s parsing.State) parsing.State {
 	if !IsEOI(s) {
 		return SetError(s, s.Pos())
 	}
-	return s
+	return s.Commit()
 }
 
 type kw string
@@ -35,7 +35,7 @@ func (p kw) Parse(s parsing.State) parsing.State {
 			return SetError(s, start)
 		}
 	}
-	return s.SetToken(parsing.Keyword, start)
+	return s.Set(parsing.Keyword, start).Commit()
 }
 
 type seq struct{ parsers []parsing.Parser }
@@ -65,7 +65,7 @@ func (p *choice) Parse(s parsing.State) parsing.State {
 		if s = parser.Parse(s); !IsError(s) {
 			return s
 		}
-		s.SetLoc(pos, ln, col)
+		s.Reset(pos, ln, col)
 	}
 	return s
 }

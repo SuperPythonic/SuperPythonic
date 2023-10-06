@@ -9,7 +9,8 @@ import (
 
 func TestParse(t *testing.T) {
 	const text = "  \n  class  "
-	if s := Prog().Parse(parsers.NewState(text)); s.Cur().Kind != parsing.EOI {
+	s := Prog().Parse(parsers.NewState(text))
+	if s.Cur().Kind != parsing.EOI {
 		t.Fatal(s)
 	}
 }
