@@ -131,7 +131,7 @@ func (p *choice) Parse(s parsing.State) parsing.State {
 	prev := s.Cur()
 	// TODO: Collect all failed states for error messages.
 	for _, parser := range p.parsers {
-		if s = parser.Parse(s); !IsError(s) {
+		if s = parser.Parse(s); !IsTerminated(s) {
 			return s
 		}
 		s.Reset(pos, ln, col, prev)
@@ -151,7 +151,7 @@ func (p *many) Parse(s parsing.State) parsing.State {
 	for {
 		pos, ln, col = s.Loc()
 		prev = s.Cur()
-		if s = p.parser.Parse(s); IsError(s) {
+		if s = p.parser.Parse(s); IsTerminated(s) {
 			s.Reset(pos, ln, col, prev)
 			break
 		}

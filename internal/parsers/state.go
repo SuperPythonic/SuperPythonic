@@ -117,3 +117,4 @@ func SetError(s parsing.State, start int) parsing.State { return s.Set(parsing.E
 func IsSOI(s parsing.State) bool                        { return s.Cur().Kind == parsing.SOI }
 func IsEOI(s parsing.State) bool                        { return s.Cur().Kind == parsing.EOI }
 func IsError(s parsing.State) bool                      { return s.Cur().Kind == parsing.Error }
+func IsTerminated(s parsing.State) bool                 { return IsError(s) || IsEOI(s) }

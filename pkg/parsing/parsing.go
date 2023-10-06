@@ -20,6 +20,8 @@ func (k TokenKind) String() string {
 		return "EOI"
 	case Keyword:
 		return "Keyword"
+	case Ident:
+		return "Ident"
 	}
 	panic(k)
 }

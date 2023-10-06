@@ -10,11 +10,7 @@ func Parse(text string) parsing.State {
 }
 
 func Prog() parsing.Parser {
-	return parsers.Seq(
-		parsers.Start(),
-		parsers.Many(Def()),
-		parsers.End(),
-	)
+	return parsers.Seq(parsers.Start(), parsers.Many(parsers.Choice(Def())), parsers.End())
 }
 
 func Def() parsing.Parser {
@@ -22,22 +18,15 @@ func Def() parsing.Parser {
 		parsers.Keyword("def"),
 		parsers.Lowercase(),
 		parsers.Choice(
-			parsers.Seq(
-				parsers.Keyword("("),
-				parsers.Keyword(")"),
-			),
+			parsers.Seq(parsers.Keyword("("), parsers.Keyword(")")),
 			parsers.Seq(
 				parsers.Keyword("("),
 				parsers.Lowercase(),
-				parsers.Many(
-					parsers.Seq(
-						parsers.Keyword(","),
-						parsers.Lowercase(),
-					),
-				),
+				parsers.Many(parsers.Seq(parsers.Keyword(","), parsers.Lowercase())),
 				parsers.Keyword(")"),
 			),
 		),
 		parsers.Keyword(":"),
+		// TODO: Function body.
 	)
 }

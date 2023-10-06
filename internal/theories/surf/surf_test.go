@@ -17,7 +17,7 @@ def fn_2 ( aaa, bbb ):
     `
 	s := Parse(text)
 	for _, token := range s.Committed() {
-		fmt.Println(s.Text(token))
+		fmt.Printf("%s\t%q\n", token.Kind, s.Text(token))
 	}
 	if s.Cur().Kind == parsing.Error {
 		t.Fatal(s)
