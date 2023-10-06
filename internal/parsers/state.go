@@ -33,26 +33,25 @@ func (p *State) Reset(pos, ln, col int) {
 	p.pos = pos
 	p.ln = ln
 	p.col = col
-	p.cur = nil
 }
 
-func (p *State) Rune(r rune) bool {
-	if c, ok := p.Next(); ok {
-		return c == r
-	}
-	return false
-}
-
-func (p *State) Next() (rune, bool) {
+func (p *State) Peek() (rune, bool) {
 	if p.pos >= len(p.text) {
 		return 0, false
 	}
+	return p.text[p.pos], true
+}
 
-	c := p.text[p.pos]
+func (p *State) Next() (rune, bool) {
+	r, ok := p.Peek()
+	if !ok {
+		return 0, false
+	}
+
 	p.pos++
 	p.col++
 
-	if p.opt.IsNewline(c) {
+	if p.opt.IsNewline(r) {
 		p.ln++
 		p.col = 1
 	}
@@ -61,7 +60,14 @@ func (p *State) Next() (rune, bool) {
 		p.Set(parsing.EOI, p.pos)
 	}
 
-	return c, true
+	return r, true
+}
+
+func (p *State) Eat(e rune) bool {
+	if r, ok := p.Next(); ok {
+		return r == e
+	}
+	return false
 }
 
 func (p *State) Set(kind parsing.TokenKind, start int) parsing.State {
@@ -88,7 +94,7 @@ func (p *State) Commit() parsing.State {
 
 func (p *State) Cur() *parsing.Token { return p.cur }
 
-func (p *State) All() []*parsing.Token { return p.committed }
+func (p *State) Committed() []*parsing.Token { return p.committed }
 
 func (p *State) Text(t *parsing.Token) string { return string(p.text[t.Start:t.End]) }
 
@@ -102,7 +108,7 @@ func (p *State) SkipSpaces() {
 		if !p.opt.IsSpace(r) {
 			return
 		}
-		p.Rune(r)
+		p.Eat(r)
 	}
 }
 

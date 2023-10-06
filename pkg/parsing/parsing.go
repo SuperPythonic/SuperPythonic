@@ -34,13 +34,14 @@ type State interface {
 	Loc() (pos, ln, col int)
 	Reset(pos, ln, col int)
 
-	Rune(r rune) bool
+	Peek() (rune, bool)
 	Next() (rune, bool)
+	Eat(e rune) bool
 
 	Set(kind TokenKind, start int) State
 	Commit() State
 	Cur() *Token
-	All() []*Token
+	Committed() []*Token
 	Text(t *Token) string
 
 	SkipSpaces()

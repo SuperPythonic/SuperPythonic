@@ -26,6 +26,6 @@ func Def() parsing.Parser {
 func Class() parsing.Parser {
 	return parsers.Seq(
 		parsers.Keyword("class"),
-		parsers.Uppercase(),
+		parsers.CamelCase(),
 	)
 }

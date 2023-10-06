@@ -35,7 +35,7 @@ func Keyword(word string) parsing.Parser { return kw(word) }
 func (p kw) Parse(s parsing.State) parsing.State {
 	start := s.Pos()
 	for _, c := range p {
-		if !s.Rune(c) {
+		if !s.Eat(c) {
 			return SetError(s, start)
 		}
 	}
@@ -51,7 +51,7 @@ func (p *id) Parse(s parsing.State) parsing.State {
 	first := true
 
 	for {
-		r, ok := s.Next()
+		r, ok := s.Peek()
 		if !ok {
 			break
 		}
@@ -61,9 +61,11 @@ func (p *id) Parse(s parsing.State) parsing.State {
 		}
 		first = false
 
-		if !p.f.IsRuneValid(r) {
+		if !unicode.IsDigit(r) && !p.f.IsRuneValid(r) {
 			break
 		}
+
+		_, _ = s.Next()
 	}
 
 	if start == s.Pos() {
@@ -81,6 +83,28 @@ type up struct{}
 
 func Uppercase() parsing.Parser     { return &id{new(up)} }
 func (*up) IsRuneValid(r rune) bool { return unicode.IsUpper(r) || r == '_' }
+
+type cb struct{ first bool }
+
+func CamelBack() parsing.Parser { return &id{&cb{true}} }
+func (c *cb) IsRuneValid(r rune) bool {
+	if c.first {
+		c.first = false
+		return unicode.IsLower(r)
+	}
+	return unicode.IsLetter(r)
+}
+
+type cc struct{ first bool }
+
+func CamelCase() parsing.Parser { return &id{&cc{true}} }
+func (c *cc) IsRuneValid(r rune) bool {
+	if c.first {
+		c.first = false
+		return unicode.IsUpper(r)
+	}
+	return unicode.IsLetter(r)
+}
 
 type seq struct{ parsers []parsing.Parser }
 
