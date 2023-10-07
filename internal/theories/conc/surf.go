@@ -25,6 +25,8 @@ func (p *defs) Parse(s parsing.State) parsing.State {
 }
 
 func (p *fn) Parse(s parsing.State) parsing.State {
+	p.name = LowercaseVar()
+	p.params = Params()
 	// TODO: Function body.
 	return parsers.Seq(parsers.Keyword("def"), p.name, p.params, parsers.Keyword(":")).Parse(s)
 }

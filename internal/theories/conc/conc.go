@@ -17,15 +17,15 @@ func (p *prog) At(idx int) theories.Def { return p.defs.defs[idx] }
 func Prog() theories.Prog { return new(prog) }
 
 type fn struct {
-	name   *lcVar
-	params *params
+	name   theories.Var
+	params theories.Params
 }
 
 func (p *fn) Name() theories.Var { return p.name }
 
 func (p *fn) Params() theories.Params { return p.params }
 
-func Fn() theories.Def { return &fn{name: new(lcVar), params: new(params)} }
+func Fn() theories.Def { return new(fn) }
 
 type lcVar struct{ name string }
 
@@ -42,3 +42,5 @@ type (
 )
 
 func (p *params) At(idx int) theories.Var { return p.list.names[idx] }
+
+func Params() theories.Params { return new(params) }
