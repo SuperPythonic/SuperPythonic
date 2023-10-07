@@ -1,4 +1,4 @@
-package theories
+package conc
 
 import (
 	"github.com/SuperPythonic/SuperPythonic/pkg/parsing"
@@ -6,39 +6,28 @@ import (
 	"github.com/SuperPythonic/SuperPythonic/pkg/theories"
 )
 
-func Parse(text string) parsing.State {
-	return parsers.Parse(Prog(), text)
+func Parse(text string) (theories.Prog, parsing.State) {
+	prog := Prog()
+	return prog, parsers.Parse(prog, text)
 }
 
-func Prog() parsing.Parser {
-	return parsers.Seq(parsers.Start(), parsers.Many(parsers.Choice(Fn())), parsers.End())
+func (p *prog) Parse(s parsing.State) parsing.State {
+	p.defs = new(defs)
+	return parsers.Seq(parsers.Start(), parsers.Many(parsers.Choice(p.defs)), parsers.End()).Parse(s)
 }
 
-type fn struct {
-	name   *lcVar
-	params *params
-}
-
-func (p *fn) Parse(s parsing.State) parsing.State {
-	s = parsers.
-		Seq(
-			parsers.Keyword("def"),
-			p.name,
-			p.params,
-			parsers.Keyword(":"),
-			// TODO: Function body.
-		).
-		Parse(s)
+func (p *defs) Parse(s parsing.State) parsing.State {
+	def := Fn()
+	if s = def.Parse(s); !parsing.IsError(s) {
+		p.defs = append(p.defs, def)
+	}
 	return s
 }
 
-func (p *fn) Name() theories.Var { return p.name }
-
-func (p *fn) Params() theories.Params { return p.params }
-
-func Fn() parsing.Parser { return &fn{name: new(lcVar), params: new(params)} }
-
-type lcVar struct{ name string }
+func (p *fn) Parse(s parsing.State) parsing.State {
+	// TODO: Function body.
+	return parsers.Seq(parsers.Keyword("def"), p.name, p.params, parsers.Keyword(":")).Parse(s)
+}
 
 func (p *lcVar) Parse(s parsing.State) parsing.State {
 	if s = parsers.Lowercase().Parse(s); !parsing.IsError(s) {
@@ -46,16 +35,6 @@ func (p *lcVar) Parse(s parsing.State) parsing.State {
 	}
 	return s
 }
-
-type (
-	params struct {
-		list *paramList
-	}
-
-	paramList struct {
-		names []*lcVar
-	}
-)
 
 func (p *params) Parse(s parsing.State) parsing.State {
 	p.list = new(paramList)
@@ -70,10 +49,8 @@ func (p *params) Parse(s parsing.State) parsing.State {
 	).Parse(s)
 }
 
-func (p *params) At(idx int) theories.Var { return p.list.names[idx] }
-
 func (p *paramList) Parse(s parsing.State) parsing.State {
-	name := new(lcVar)
+	name := LowercaseVar()
 	if s = name.Parse(s); !parsing.IsError(s) {
 		p.names = append(p.names, name)
 	}

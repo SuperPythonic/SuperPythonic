@@ -1,6 +1,7 @@
-package theories
+package conc
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/SuperPythonic/SuperPythonic/pkg/parsing"
@@ -12,10 +13,11 @@ def fn_0 ( ) :
 
    def fn_1 ( aaa )    :
 
-def fn_2 ( aaa, bbb ):
+def fn_2 ( bbb,  ccc ):
     `
-	s := Parse(text)
+	prog, s := Parse(text)
 	if s.Cur().Kind == parsing.Error {
 		t.Fatal(s)
 	}
+	fmt.Println(prog)
 }

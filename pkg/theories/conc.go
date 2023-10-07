@@ -5,7 +5,7 @@ import "github.com/SuperPythonic/SuperPythonic/pkg/parsing"
 type Prog interface {
 	parsing.Parser
 
-	Defs() []Def
+	At(idx int) Def
 }
 
 type Def interface {
