@@ -1,4 +1,4 @@
-package surf
+package theories
 
 import (
 	"testing"
