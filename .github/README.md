@@ -7,12 +7,12 @@
 
 Features I want to have in this language:
 
-* Python bytecode generation
-* Python syntax compatibility
+* Python source code generation, a.k.a. transpilation
+* Python syntax compatibility (well, mostly)
 * Dependent types
 * Type classes a la Haskell 98
 * Static reflection, a.k.a. datatype generics
-* Algebraic effects
+* Builtin effects: Reader, exception, state, IO
 
 More ideas:
 

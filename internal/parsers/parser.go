@@ -42,9 +42,9 @@ func (p kw) Parse(s parsing.State) parsing.State {
 	return s.Set(parsing.Keyword, start)
 }
 
-type Ident interface{ IsRuneValid(r rune) bool }
+type RuneFilter interface{ Valid(r rune) bool }
 
-type id struct{ f Ident }
+type id struct{ f RuneFilter }
 
 func (p *id) Parse(s parsing.State) parsing.State {
 	start := s.Pos()
@@ -61,7 +61,7 @@ func (p *id) Parse(s parsing.State) parsing.State {
 		}
 		first = false
 
-		if !unicode.IsDigit(r) && !p.f.IsRuneValid(r) {
+		if !unicode.IsDigit(r) && !p.f.Valid(r) {
 			break
 		}
 
@@ -76,18 +76,18 @@ func (p *id) Parse(s parsing.State) parsing.State {
 
 type lc struct{}
 
-func Lowercase() parsing.Parser     { return &id{new(lc)} }
-func (*lc) IsRuneValid(r rune) bool { return unicode.IsLower(r) || r == '_' }
+func Lowercase() parsing.Parser { return &id{new(lc)} }
+func (*lc) Valid(r rune) bool   { return unicode.IsLower(r) || r == '_' }
 
 type up struct{}
 
-func Uppercase() parsing.Parser     { return &id{new(up)} }
-func (*up) IsRuneValid(r rune) bool { return unicode.IsUpper(r) || r == '_' }
+func Uppercase() parsing.Parser { return &id{new(up)} }
+func (*up) Valid(r rune) bool   { return unicode.IsUpper(r) || r == '_' }
 
 type cb struct{ first bool }
 
 func CamelBack() parsing.Parser { return &id{&cb{true}} }
-func (c *cb) IsRuneValid(r rune) bool {
+func (c *cb) Valid(r rune) bool {
 	if c.first {
 		c.first = false
 		return unicode.IsLower(r)
@@ -98,12 +98,41 @@ func (c *cb) IsRuneValid(r rune) bool {
 type cc struct{ first bool }
 
 func CamelCase() parsing.Parser { return &id{&cc{true}} }
-func (c *cc) IsRuneValid(r rune) bool {
+func (c *cc) Valid(r rune) bool {
 	if c.first {
 		c.first = false
 		return unicode.IsUpper(r)
 	}
 	return unicode.IsLetter(r)
+}
+
+type long struct{}
+
+func Long() parsing.Parser { return new(long) }
+
+func (*long) Parse(s parsing.State) parsing.State {
+	return Choice(new(bin), new(oct), new(hex)).Parse(s)
+}
+
+type bin struct{}
+
+func (*bin) Parse(s parsing.State) parsing.State {
+	//TODO implement me
+	panic("implement me")
+}
+
+type oct struct{}
+
+func (*oct) Parse(s parsing.State) parsing.State {
+	//TODO implement me
+	panic("implement me")
+}
+
+type hex struct{}
+
+func (*hex) Parse(s parsing.State) parsing.State {
+	//TODO implement me
+	panic("implement me")
 }
 
 type seq struct{ parsers []parsing.Parser }
