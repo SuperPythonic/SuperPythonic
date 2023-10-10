@@ -140,6 +140,9 @@ type seq struct{ parsers []parsing.Parser }
 func Seq(parsers ...parsing.Parser) parsing.Parser { return &seq{parsers} }
 
 func (p *seq) Parse(s parsing.State) parsing.State {
+	if len(p.parsers) == 0 {
+		panic("at least 1 parser expected")
+	}
 	for i, parser := range p.parsers {
 		if s = parser.Parse(s); parsing.IsError(s) {
 			return s
@@ -156,6 +159,9 @@ type choice struct{ parsers []parsing.Parser }
 func Choice(parsers ...parsing.Parser) parsing.Parser { return &choice{parsers} }
 
 func (p *choice) Parse(s parsing.State) parsing.State {
+	if len(p.parsers) == 0 {
+		panic("at least 1 choice expected")
+	}
 	pos, ln, col := s.Loc()
 	prev := s.Cur()
 	// TODO: Collect all failed states for error messages.
@@ -188,6 +194,19 @@ func (p *many) Parse(s parsing.State) parsing.State {
 			break
 		}
 		s.SkipSpaces()
+	}
+	return s
+}
+
+type opt struct{ parser parsing.Parser }
+
+func Optional(parser parsing.Parser) parsing.Parser { return &opt{parser} }
+
+func (p *opt) Parse(s parsing.State) parsing.State {
+	pos, ln, col := s.Loc()
+	prev := s.Cur()
+	if s = p.parser.Parse(s); parsing.IsError(s) {
+		s.Reset(pos, ln, col, prev)
 	}
 	return s
 }

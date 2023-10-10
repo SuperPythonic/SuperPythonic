@@ -3,19 +3,17 @@ package parsers
 import "github.com/SuperPythonic/SuperPythonic/pkg/parsing"
 
 type State struct {
-	opt          parsing.Options
+	opts         parsing.Options
 	text         []rune
 	pos, ln, col int
 	cur          *parsing.Token
 }
 
-func NewState(text string) *State {
-	return NewStateWith(text, new(opt))
-}
+func NewState(text string) *State { return NewStateWith(text, new(opts)) }
 
 func NewStateWith(text string, opt parsing.Options) *State {
 	return &State{
-		opt:  opt,
+		opts: opt,
 		text: []rune(text),
 		ln:   1,
 		col:  1,
@@ -49,7 +47,7 @@ func (p *State) Next() (rune, bool) {
 	p.pos++
 	p.col++
 
-	if p.opt.IsNewline(r) {
+	if p.opts.IsNewline(r) {
 		p.ln++
 		p.col = 1
 	}
@@ -90,7 +88,7 @@ func (p *State) SkipSpaces() {
 		}
 
 		r := p.text[p.pos]
-		if !p.opt.IsSpace(r) {
+		if !p.opts.IsSpace(r) {
 			return
 		}
 		p.Eat(r)
