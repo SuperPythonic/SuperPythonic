@@ -200,7 +200,7 @@ func (p *many) Parse(s parsing.State) parsing.State {
 
 type opt struct{ parser parsing.Parser }
 
-func Optional(parser parsing.Parser) parsing.Parser { return &opt{parser} }
+func Option(parser parsing.Parser) parsing.Parser { return &opt{parser} }
 
 func (p *opt) Parse(s parsing.State) parsing.State {
 	pos, ln, col := s.Loc()
