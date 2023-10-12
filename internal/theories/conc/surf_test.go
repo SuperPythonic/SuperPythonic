@@ -3,8 +3,6 @@ package conc
 import (
 	"fmt"
 	"testing"
-
-	"github.com/SuperPythonic/SuperPythonic/pkg/parsing"
 )
 
 func TestParse(t *testing.T) {
@@ -16,7 +14,7 @@ def fn_0 ( ) :
 def fn_2 ( bbb,  ccc ):
     `
 	prog, s := Parse(text)
-	if s.Cur().Kind == parsing.Error {
+	if s.IsError() {
 		t.Fatal(s)
 	}
 	fmt.Println(prog)

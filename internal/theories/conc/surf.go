@@ -18,7 +18,7 @@ func (p *prog) Parse(s parsing.State) parsing.State {
 
 func (p *defs) Parse(s parsing.State) parsing.State {
 	def := Fn()
-	if s = def.Parse(s); !parsing.IsError(s) {
+	if s = def.Parse(s); !s.IsError() {
 		p.defs = append(p.defs, def)
 	}
 	return s
@@ -32,8 +32,8 @@ func (p *fn) Parse(s parsing.State) parsing.State {
 }
 
 func (p *lcVar) Parse(s parsing.State) parsing.State {
-	if s = parsers.Lowercase().Parse(s); !parsing.IsError(s) {
-		p.name = s.Text(s.Cur())
+	if s = parsers.Lowercase().Parse(s); !s.IsError() {
+		p.name = s.Text(s.Span())
 	}
 	return s
 }
@@ -53,7 +53,7 @@ func (p *params) Parse(s parsing.State) parsing.State {
 
 func (p *paramList) Parse(s parsing.State) parsing.State {
 	name := LowercaseVar()
-	if s = name.Parse(s); !parsing.IsError(s) {
+	if s = name.Parse(s); !s.IsError() {
 		p.names = append(p.names, name)
 	}
 	return s

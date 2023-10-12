@@ -2,95 +2,99 @@ package parsers
 
 import "github.com/SuperPythonic/SuperPythonic/pkg/parsing"
 
+const noErrAt = -1
+
 type State struct {
 	opts         parsing.Options
 	text         []rune
 	pos, ln, col int
-	cur          *parsing.Token
+	cur          *parsing.Span
+	errAt        int
 }
 
 func NewState(text string) *State { return NewStateWith(text, new(opts)) }
 
 func NewStateWith(text string, opt parsing.Options) *State {
-	return &State{
-		opts: opt,
-		text: []rune(text),
-		ln:   1,
-		col:  1,
-		cur:  &parsing.Token{Kind: parsing.SOI, Line: 1, Col: 1},
-	}
+	return &State{opts: opt, text: []rune(text), ln: 1, col: 1, errAt: noErrAt}
 }
 
-func (p *State) Pos() int { return p.pos }
+func (s *State) Pos() int { return s.pos }
 
-func (p *State) Loc() (pos, ln, col int) { return p.pos, p.ln, p.col }
-func (p *State) Reset(pos, ln, col int, t *parsing.Token) {
-	p.pos = pos
-	p.ln = ln
-	p.col = col
-	p.cur = t
+func (s *State) Dump() (pos, ln, col int, span *parsing.Span) { return s.pos, s.ln, s.col, s.cur }
+func (s *State) Restore(pos, ln, col int, span *parsing.Span) {
+	s.pos = pos
+	s.ln = ln
+	s.col = col
+	s.cur = span
+	s.errAt = noErrAt
 }
 
-func (p *State) Peek() (rune, bool) {
-	if p.pos >= len(p.text) {
+func (s *State) Peek() (rune, bool) {
+	if s.pos >= len(s.text) {
 		return 0, false
 	}
-	return p.text[p.pos], true
+	return s.text[s.pos], true
 }
 
-func (p *State) Next() (rune, bool) {
-	r, ok := p.Peek()
+func (s *State) Next() (rune, bool) {
+	r, ok := s.Peek()
 	if !ok {
 		return 0, false
 	}
 
-	p.pos++
-	p.col++
+	s.pos++
+	s.col++
 
-	if p.opts.IsNewline(r) {
-		p.ln++
-		p.col = 1
-	}
-
-	if p.pos == len(p.text) {
-		p.Set(parsing.EOI, p.pos)
+	if s.opts.IsNewline(r) {
+		s.ln++
+		s.col = 1
 	}
 
 	return r, true
 }
 
-func (p *State) Eat(e rune) bool {
-	if r, ok := p.Next(); ok {
+func (s *State) Eat(e rune) bool {
+	if r, ok := s.Next(); ok {
 		return r == e
 	}
 	return false
 }
 
-func (p *State) Set(kind parsing.TokenKind, start int) parsing.State {
-	p.cur = &parsing.Token{
-		Kind:  kind,
+func (s *State) IsError() bool { return s.errAt != noErrAt }
+
+func (s *State) IsSOI() bool { return s.pos == 0 }
+
+func (s *State) IsEOI() bool { return s.pos == len(s.text) }
+
+func (s *State) WithSpan(start int) parsing.State {
+	s.cur = &parsing.Span{
 		Start: start,
-		End:   p.pos,
-		Line:  p.ln,
-		Col:   p.col - (p.pos - start),
+		End:   s.pos,
+		Line:  s.ln,
+		Col:   s.col - (s.pos - start),
 	}
-	return p
+	return s
 }
 
-func (p *State) Cur() *parsing.Token { return p.cur }
+func (s *State) WithError(start int) parsing.State {
+	s.errAt = start
+	return s
+}
 
-func (p *State) Text(t *parsing.Token) string { return string(p.text[t.Start:t.End]) }
+func (s *State) Span() *parsing.Span { return s.cur }
 
-func (p *State) SkipSpaces() {
+func (s *State) Text(span *parsing.Span) string { return string(s.text[span.Start:span.End]) }
+
+func (s *State) SkipSpaces() {
 	for {
-		if p.pos >= len(p.text) {
+		if s.pos >= len(s.text) {
 			return
 		}
 
-		r := p.text[p.pos]
-		if !p.opts.IsSpace(r) {
+		r := s.text[s.pos]
+		if !s.opts.IsSpace(r) {
 			return
 		}
-		p.Eat(r)
+		s.Eat(r)
 	}
 }

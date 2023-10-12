@@ -1,13 +1,9 @@
 package parsers
 
-import (
-	"testing"
-
-	"github.com/SuperPythonic/SuperPythonic/pkg/parsing"
-)
+import "testing"
 
 func TestLong(t *testing.T) {
-	if s := Long().Parse(NewState("0b1_01_0")); parsing.IsError(s) {
+	if s := Long().Parse(NewState("0b1_01_0")); s.IsError() {
 		t.Fatal(s)
 	}
 }

@@ -12,8 +12,8 @@ type start struct{}
 func Start() parsing.Parser { return new(start) }
 
 func (p *start) Parse(s parsing.State) parsing.State {
-	if !parsing.IsSOI(s) {
-		return parsing.SetError(s, s.Pos())
+	if !s.IsSOI() {
+		return s.WithError(s.Pos())
 	}
 	return s
 }
@@ -23,8 +23,8 @@ type end struct{}
 func End() parsing.Parser { return new(end) }
 
 func (e *end) Parse(s parsing.State) parsing.State {
-	if !parsing.IsEOI(s) {
-		return parsing.SetError(s, s.Pos())
+	if !s.IsEOI() {
+		return s.WithError(s.Pos())
 	}
 	return s
 }
@@ -47,7 +47,7 @@ func (p *ran) Parse(s parsing.State) parsing.State {
 		_, _ = s.Next()
 		return s
 	}
-	return parsing.SetError(s, s.Pos())
+	return s.WithError(s.Pos())
 }
 
 type kw string
@@ -58,10 +58,10 @@ func (p kw) Parse(s parsing.State) parsing.State {
 	start := s.Pos()
 	for _, c := range p {
 		if !s.Eat(c) {
-			return parsing.SetError(s, start)
+			return s.WithError(start)
 		}
 	}
-	return s.Set(parsing.Keyword, start)
+	return s.WithSpan(start)
 }
 
 type RuneFilter interface{ Valid(r rune) bool }
@@ -91,9 +91,9 @@ func (p *id) Parse(s parsing.State) parsing.State {
 	}
 
 	if start == s.Pos() {
-		return parsing.SetError(s, start)
+		return s.WithError(start)
 	}
-	return s.Set(parsing.Ident, start)
+	return s.WithSpan(start)
 }
 
 type lc struct{}
@@ -134,8 +134,8 @@ func Long() parsing.Parser { return new(long) }
 
 func (*long) Parse(s parsing.State) parsing.State {
 	start := s.Pos()
-	if s = Choice(new(bin), new(oct), new(hex)).Parse(s); !parsing.IsError(s) {
-		s.Set(parsing.Keyword, start)
+	if s = Choice(new(bin), new(oct), new(hex)).Parse(s); !s.IsError() {
+		s.WithSpan(start)
 	}
 	return s
 }
@@ -180,7 +180,7 @@ func Seq(parsers ...parsing.Parser) parsing.Parser {
 
 func (p *seq) Parse(s parsing.State) parsing.State {
 	for i, parser := range p.parsers {
-		if s = parser.Parse(s); parsing.IsError(s) {
+		if s = parser.Parse(s); s.IsError() {
 			return s
 		}
 		if i+1 < len(p.parsers) {
@@ -200,14 +200,13 @@ func Choice(parsers ...parsing.Parser) parsing.Parser {
 }
 
 func (p *choice) Parse(s parsing.State) parsing.State {
-	pos, ln, col := s.Loc()
-	prev := s.Cur()
+	pos, ln, col, prev := s.Dump()
 	// TODO: Collect all failed states for error messages.
 	for _, parser := range p.parsers {
-		if s = parser.Parse(s); !parsing.IsError(s) {
+		if s = parser.Parse(s); !s.IsError() {
 			return s
 		}
-		s.Reset(pos, ln, col, prev)
+		s.Restore(pos, ln, col, prev)
 	}
 	return s
 }
@@ -219,16 +218,15 @@ func Many(parser parsing.Parser) parsing.Parser { return &many{parser} }
 func (p *many) Parse(s parsing.State) parsing.State {
 	var (
 		pos, ln, col int
-		prev         *parsing.Token
+		prev         *parsing.Span
 	)
 	for {
-		pos, ln, col = s.Loc()
-		prev = s.Cur()
-		if s = p.parser.Parse(s); parsing.IsError(s) {
-			s.Reset(pos, ln, col, prev)
+		pos, ln, col, prev = s.Dump()
+		if s = p.parser.Parse(s); s.IsError() {
+			s.Restore(pos, ln, col, prev)
 			break
 		}
-		if parsing.IsEOI(s) {
+		if s.IsEOI() {
 			break
 		}
 		s.SkipSpaces()
@@ -241,10 +239,9 @@ type opt struct{ parser parsing.Parser }
 func Option(parser parsing.Parser) parsing.Parser { return &opt{parser} }
 
 func (p *opt) Parse(s parsing.State) parsing.State {
-	pos, ln, col := s.Loc()
-	prev := s.Cur()
-	if s = p.parser.Parse(s); parsing.IsError(s) {
-		s.Reset(pos, ln, col, prev)
+	pos, ln, col, prev := s.Dump()
+	if s = p.parser.Parse(s); s.IsError() {
+		s.Restore(pos, ln, col, prev)
 	}
 	return s
 }
