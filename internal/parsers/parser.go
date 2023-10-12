@@ -1,6 +1,7 @@
 package parsers
 
 import (
+	"fmt"
 	"unicode"
 
 	"github.com/SuperPythonic/SuperPythonic/pkg/parsing"
@@ -26,6 +27,27 @@ func (e *end) Parse(s parsing.State) parsing.State {
 		return parsing.SetError(s, s.Pos())
 	}
 	return s
+}
+
+type ran struct{ from, to rune }
+
+func Range(from, to rune) parsing.Parser {
+	if from >= to {
+		panic(fmt.Sprintf("invalid range [%c, %c]", from, to))
+	}
+	return &ran{from, to}
+}
+
+func (p *ran) Parse(s parsing.State) parsing.State {
+	r, ok := s.Peek()
+	if !ok {
+		return s
+	}
+	if p.from <= r && r >= p.to {
+		_, _ = s.Next()
+		return s
+	}
+	return parsing.SetError(s, s.Pos())
 }
 
 type kw string
@@ -111,14 +133,26 @@ type long struct{}
 func Long() parsing.Parser { return new(long) }
 
 func (*long) Parse(s parsing.State) parsing.State {
-	return Choice(new(bin), new(oct), new(hex)).Parse(s)
+	start := s.Pos()
+	if s = Choice(new(bin), new(oct), new(hex)).Parse(s); !parsing.IsError(s) {
+		s.Set(parsing.Keyword, start)
+	}
+	return s
 }
 
 type bin struct{}
 
 func (*bin) Parse(s parsing.State) parsing.State {
-	//TODO implement me
-	panic("implement me")
+	return Seq(
+		Choice(Keyword("0b"), Keyword("0B")),
+		Range('0', '1'),
+		Many(
+			Seq(
+				Option(Keyword("_")),
+				Range('0', '1'),
+			),
+		),
+	).Parse(s)
 }
 
 type oct struct{}
@@ -137,12 +171,14 @@ func (*hex) Parse(s parsing.State) parsing.State {
 
 type seq struct{ parsers []parsing.Parser }
 
-func Seq(parsers ...parsing.Parser) parsing.Parser { return &seq{parsers} }
-
-func (p *seq) Parse(s parsing.State) parsing.State {
-	if len(p.parsers) == 0 {
+func Seq(parsers ...parsing.Parser) parsing.Parser {
+	if len(parsers) == 0 {
 		panic("at least 1 parser expected")
 	}
+	return &seq{parsers}
+}
+
+func (p *seq) Parse(s parsing.State) parsing.State {
 	for i, parser := range p.parsers {
 		if s = parser.Parse(s); parsing.IsError(s) {
 			return s
@@ -156,12 +192,14 @@ func (p *seq) Parse(s parsing.State) parsing.State {
 
 type choice struct{ parsers []parsing.Parser }
 
-func Choice(parsers ...parsing.Parser) parsing.Parser { return &choice{parsers} }
-
-func (p *choice) Parse(s parsing.State) parsing.State {
-	if len(p.parsers) == 0 {
+func Choice(parsers ...parsing.Parser) parsing.Parser {
+	if len(parsers) == 0 {
 		panic("at least 1 choice expected")
 	}
+	return &choice{parsers}
+}
+
+func (p *choice) Parse(s parsing.State) parsing.State {
 	pos, ln, col := s.Loc()
 	prev := s.Cur()
 	// TODO: Collect all failed states for error messages.

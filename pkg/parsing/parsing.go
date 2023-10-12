@@ -8,6 +8,7 @@ const (
 	EOI
 	Keyword
 	Ident
+	Int
 )
 
 func (k TokenKind) String() string {
@@ -22,6 +23,8 @@ func (k TokenKind) String() string {
 		return "Keyword"
 	case Ident:
 		return "Ident"
+	case Int:
+		return "Int"
 	}
 	panic(k)
 }
