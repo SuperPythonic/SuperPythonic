@@ -9,10 +9,18 @@ Features I want to have in this language:
 
 * Python source code generation, a.k.a. transpilation
 * Python syntax compatibility (well, mostly)
-* Dependent types
+* Normalization by Evaluation, dependent types, implicit arguments
 * Type classes a la Haskell 98
 * Static reflection, a.k.a. datatype generics
-* Builtin effects: Reader, exception, state, IO
+* Builtin effects a la Haskell:
+    * `hook`: Like `ReaderT`
+    * `exn`: Like `ExceptT`
+    * `mut`: Like `StateT`
+    * `io`: Like `IO`
+* Row polymorphic effect types:
+    * Concatenation-based
+    * Scoped labels
+    * Effects as modal in Pi types
 
 More ideas:
 
