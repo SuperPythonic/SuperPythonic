@@ -23,6 +23,7 @@ var (
 	Int      = parsers.Int
 	Str      = parsers.Str
 	Bool     = parsers.Bool
+	Unit     = parsers.Unit
 
 	Seq    = parsers.Seq
 	Choice = parsers.Choice

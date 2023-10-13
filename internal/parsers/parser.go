@@ -220,6 +220,12 @@ func Bool() parsing.Parser { return (*b)(nil) }
 
 func (*b) Parse(s parsing.State) parsing.State { return Choice(Word("False"), Word("True")).Parse(s) }
 
+type unit struct{}
+
+func Unit() parsing.Parser { return (*unit)(nil) }
+
+func (*unit) Parse(s parsing.State) parsing.State { return Word("()").Parse(s) }
+
 type seq struct{ parsers []parsing.Parser }
 
 func Seq(parsers ...parsing.Parser) parsing.Parser {
