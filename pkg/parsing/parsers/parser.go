@@ -4,7 +4,7 @@ import (
 	"github.com/SuperPythonic/SuperPythonic/internal/parsers"
 )
 
-type Keyword = parsers.Keyword
+type Word = parsers.Word
 
 var (
 	NewState = parsers.NewState
@@ -20,12 +20,14 @@ var (
 	CamelBack = parsers.CamelBack
 	CamelCase = parsers.CamelCase
 
-	Int = parsers.Int
+	OctDigit = parsers.OctDigit
+	HexDigit = parsers.HexDigit
+	Int      = parsers.Int
 
 	Seq    = parsers.Seq
 	Choice = parsers.Choice
 	Many   = parsers.Many
 	Option = parsers.Option
 	Times  = parsers.Times
-	Until  = parsers.Until
+	Not    = parsers.Not
 )

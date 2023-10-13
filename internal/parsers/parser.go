@@ -9,9 +9,9 @@ import (
 
 type start struct{}
 
-func Start() parsing.Parser { return new(start) }
+func Start() parsing.Parser { return (*start)(nil) }
 
-func (p *start) Parse(s parsing.State) parsing.State {
+func (*start) Parse(s parsing.State) parsing.State {
 	if !s.IsSOI() {
 		return s.WithError(s.Pos())
 	}
@@ -20,9 +20,9 @@ func (p *start) Parse(s parsing.State) parsing.State {
 
 type end struct{}
 
-func End() parsing.Parser { return new(end) }
+func End() parsing.Parser { return (*end)(nil) }
 
-func (e *end) Parse(s parsing.State) parsing.State {
+func (*end) Parse(s parsing.State) parsing.State {
 	if !s.IsEOI() {
 		return s.WithError(s.Pos())
 	}
@@ -50,9 +50,9 @@ func (p *ran) Parse(s parsing.State) parsing.State {
 	return s.WithError(s.Pos())
 }
 
-type Keyword string
+type Word string
 
-func (p Keyword) Parse(s parsing.State) parsing.State {
+func (p Word) Parse(s parsing.State) parsing.State {
 	start := s.Pos()
 	for _, c := range p {
 		if !s.Eat(c) {
@@ -96,12 +96,12 @@ func (p *id) Parse(s parsing.State) parsing.State {
 
 type lc struct{}
 
-func Lowercase() parsing.Parser { return &id{new(lc)} }
+func Lowercase() parsing.Parser { return &id{(*lc)(nil)} }
 func (*lc) Valid(r rune) bool   { return unicode.IsLower(r) || r == '_' }
 
 type up struct{}
 
-func Uppercase() parsing.Parser { return &id{new(up)} }
+func Uppercase() parsing.Parser { return &id{(*up)(nil)} }
 func (*up) Valid(r rune) bool   { return unicode.IsUpper(r) || r == '_' }
 
 type cb struct{ first bool }
@@ -126,13 +126,26 @@ func (c *cc) Valid(r rune) bool {
 	return unicode.IsLetter(r)
 }
 
+type octDigit struct{}
+
+func OctDigit() parsing.Parser                        { return (*octDigit)(nil) }
+func (*octDigit) Parse(s parsing.State) parsing.State { return Range('0', '7').Parse(s) }
+
+type hexDigit struct{}
+
+func HexDigit() parsing.Parser { return (*hexDigit)(nil) }
+
+func (*hexDigit) Parse(s parsing.State) parsing.State {
+	return Choice(Range('0', '9'), Range('a', 'f'), Range('A', 'F')).Parse(s)
+}
+
 type i struct{}
 
-func Int() parsing.Parser { return new(i) }
+func Int() parsing.Parser { return (*i)(nil) }
 
 func (*i) Parse(s parsing.State) parsing.State {
 	start := s.Pos()
-	if s = Choice(new(bin), new(oct), new(hex)).Parse(s); !s.IsError() {
+	if s = Choice((*bin)(nil), (*oct)(nil), (*hex)(nil)).Parse(s); !s.IsError() {
 		s.WithSpan(start)
 	}
 	return s
@@ -142,9 +155,9 @@ type bin struct{}
 
 func (*bin) Parse(s parsing.State) parsing.State {
 	return Seq(
-		Choice(Keyword("0b"), Keyword("0B")),
+		Choice(Word("0b"), Word("0B")),
 		Range('0', '1'),
-		Many(Seq(Option(Keyword("_")), Range('0', '1'))),
+		Many(Seq(Option(Word("_")), Range('0', '1'))),
 	).Parse(s)
 }
 
@@ -152,38 +165,31 @@ type oct struct{}
 
 func (*oct) Parse(s parsing.State) parsing.State {
 	return Seq(
-		Choice(Keyword("0o"), Keyword("0O")),
-		Range('0', '7'),
-		Many(Seq(Option(Keyword("_")), Range('0', '7'))),
+		Choice(Word("0o"), Word("0O")),
+		OctDigit(),
+		Many(Seq(Option(Word("_")), OctDigit())),
 	).Parse(s)
 }
 
-type (
-	hex      struct{ digit hexDigit }
-	hexDigit struct{}
-)
+type hex struct{}
 
 func (p *hex) Parse(s parsing.State) parsing.State {
 	return Seq(
-		Choice(Keyword("0x"), Keyword("0X")),
-		&p.digit,
-		Many(Seq(Option(Keyword("_")), &p.digit)),
+		Choice(Word("0x"), Word("0X")),
+		HexDigit(),
+		Many(Seq(Option(Word("_")), HexDigit())),
 	).Parse(s)
-}
-
-func (*hexDigit) Parse(s parsing.State) parsing.State {
-	return Choice(Range('0', '9'), Range('a', 'f'), Range('A', 'F')).Parse(s)
 }
 
 type str struct{}
 
-func Str() parsing.Parser { return new(str) }
+func Str() parsing.Parser { return (*str)(nil) }
 
 func (p *str) Parse(s parsing.State) parsing.State {
 	return Seq(
-		Keyword(`"`),
+		Word(`"`),
 		Many(Choice( /* TODO */ )),
-		Keyword(`"`),
+		Word(`"`),
 	).Parse(s)
 }
 
@@ -285,20 +291,15 @@ func (p *times) Parse(s parsing.State) parsing.State {
 	return s
 }
 
-type until struct{ parser parsing.Parser }
+type not struct{ parser parsing.Parser }
 
-func Until(parser parsing.Parser) parsing.Parser { return &until{parser} }
+func Not(parser parsing.Parser) parsing.Parser { return &not{parser} }
 
-func (p *until) Parse(s parsing.State) parsing.State {
-	var (
-		pos, ln, col int
-		prev         *parsing.Span
-	)
-	for {
-		pos, ln, col, prev = s.Dump()
-		if s = p.parser.Parse(s); !s.IsError() {
-			s.Restore(pos, ln, col, prev)
-			return s
-		}
+func (p *not) Parse(s parsing.State) parsing.State {
+	pos, ln, col, prev := s.Dump()
+	if s = p.parser.Parse(s); !s.IsError() {
+		s.Restore(pos, ln, col, prev)
+		return s
 	}
+	return s
 }
