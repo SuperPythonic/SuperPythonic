@@ -2,13 +2,13 @@ package parsers
 
 import (
 	"github.com/SuperPythonic/SuperPythonic/internal/parsers"
-	"github.com/SuperPythonic/SuperPythonic/pkg/parsing"
 )
 
 type Keyword = parsers.Keyword
 
 var (
 	NewState = parsers.NewState
+	Parse    = parsers.Parse
 
 	Start = parsers.Start
 	End   = parsers.End
@@ -26,8 +26,6 @@ var (
 	Choice = parsers.Choice
 	Many   = parsers.Many
 	Option = parsers.Option
+	Times  = parsers.Times
+	Until  = parsers.Until
 )
-
-func Parse(parser parsing.Parser, text string) parsing.State {
-	return parser.Parse(NewState(text))
-}

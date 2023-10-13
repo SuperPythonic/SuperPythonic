@@ -265,15 +265,15 @@ func (p *opt) Parse(s parsing.State) parsing.State {
 }
 
 type times struct {
-	n      int
 	parser parsing.Parser
+	n      int
 }
 
-func Times(n int, parser parsing.Parser) parsing.Parser {
+func Times(parser parsing.Parser, n int) parsing.Parser {
 	if n < 2 {
 		panic("at least 2 times expected")
 	}
-	return &times{n, parser}
+	return &times{parser, n}
 }
 
 func (p *times) Parse(s parsing.State) parsing.State {
@@ -283,4 +283,22 @@ func (p *times) Parse(s parsing.State) parsing.State {
 		}
 	}
 	return s
+}
+
+type until struct{ parser parsing.Parser }
+
+func Until(parser parsing.Parser) parsing.Parser { return &until{parser} }
+
+func (p *until) Parse(s parsing.State) parsing.State {
+	var (
+		pos, ln, col int
+		prev         *parsing.Span
+	)
+	for {
+		pos, ln, col, prev = s.Dump()
+		if s = p.parser.Parse(s); !s.IsError() {
+			s.Restore(pos, ln, col, prev)
+			return s
+		}
+	}
 }

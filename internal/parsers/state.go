@@ -18,6 +18,10 @@ func NewStateWith(text string, opt parsing.Options) *State {
 	return &State{opts: opt, text: []rune(text), ln: 1, col: 1, errAt: noErrAt}
 }
 
+func Parse(parser parsing.Parser, text string) parsing.State {
+	return parser.Parse(NewState(text))
+}
+
 func (s *State) Pos() int { return s.pos }
 
 func (s *State) Dump() (pos, ln, col int, span *parsing.Span) { return s.pos, s.ln, s.col, s.cur }
