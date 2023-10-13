@@ -175,6 +175,18 @@ func (*hexDigit) Parse(s parsing.State) parsing.State {
 	return Choice(Range('0', '9'), Range('a', 'f'), Range('A', 'F')).Parse(s)
 }
 
+type str struct{}
+
+func Str() parsing.Parser { return new(str) }
+
+func (p *str) Parse(s parsing.State) parsing.State {
+	return Seq(
+		Keyword(`"`),
+		Many(Choice( /* TODO */ )),
+		Keyword(`"`),
+	).Parse(s)
+}
+
 type seq struct{ parsers []parsing.Parser }
 
 func Seq(parsers ...parsing.Parser) parsing.Parser {
@@ -248,6 +260,27 @@ func (p *opt) Parse(s parsing.State) parsing.State {
 	pos, ln, col, prev := s.Dump()
 	if s = p.parser.Parse(s); s.IsError() {
 		s.Restore(pos, ln, col, prev)
+	}
+	return s
+}
+
+type times struct {
+	n      int
+	parser parsing.Parser
+}
+
+func Times(n int, parser parsing.Parser) parsing.Parser {
+	if n < 2 {
+		panic("at least 2 times expected")
+	}
+	return &times{n, parser}
+}
+
+func (p *times) Parse(s parsing.State) parsing.State {
+	for i := 0; i < p.n; i++ {
+		if s = p.parser.Parse(s); s.IsError() {
+			return s.WithError(s.Pos())
+		}
 	}
 	return s
 }
