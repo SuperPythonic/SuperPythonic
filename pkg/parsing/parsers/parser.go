@@ -27,6 +27,7 @@ var (
 	Seq    = parsers.Seq
 	Choice = parsers.Choice
 	Many   = parsers.Many
+	More   = parsers.More
 	Option = parsers.Option
 	Times  = parsers.Times
 	Not    = parsers.Not

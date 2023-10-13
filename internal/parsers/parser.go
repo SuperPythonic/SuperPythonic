@@ -181,16 +181,30 @@ func (p *hex) Parse(s parsing.State) parsing.State {
 	).Parse(s)
 }
 
-type str struct{}
+type (
+	str              struct{}
+	unescapedStrPart struct{}
+	escapedStrPart   struct{}
+)
 
 func Str() parsing.Parser { return (*str)(nil) }
 
-func (p *str) Parse(s parsing.State) parsing.State {
+func (*str) Parse(s parsing.State) parsing.State {
 	return Seq(
 		Word(`"`),
-		Many(Choice( /* TODO */ )),
+		Many(Choice((*unescapedStrPart)(nil), (*escapedStrPart)(nil))),
 		Word(`"`),
 	).Parse(s)
+}
+
+func (*unescapedStrPart) Parse(s parsing.State) parsing.State {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (*escapedStrPart) Parse(s parsing.State) parsing.State {
+	//TODO implement me
+	panic("implement me")
 }
 
 type seq struct{ parsers []parsing.Parser }
@@ -235,14 +249,19 @@ func (p *choice) Parse(s parsing.State) parsing.State {
 	return s.WithError(pos)
 }
 
-type many struct{ parser parsing.Parser }
+type many struct {
+	more   bool
+	parser parsing.Parser
+}
 
-func Many(parser parsing.Parser) parsing.Parser { return &many{parser} }
+func Many(parser parsing.Parser) parsing.Parser { return &many{parser: parser} }
+func More(parser parsing.Parser) parsing.Parser { return &many{true, parser} }
 
 func (p *many) Parse(s parsing.State) parsing.State {
 	var (
 		pos, ln, col int
 		prev         *parsing.Span
+		hasOne       bool
 	)
 	for {
 		pos, ln, col, prev = s.Dump()
@@ -254,6 +273,10 @@ func (p *many) Parse(s parsing.State) parsing.State {
 			break
 		}
 		s.SkipSpaces()
+		hasOne = true
+	}
+	if p.more && !hasOne {
+		return s.WithError(pos)
 	}
 	return s
 }
