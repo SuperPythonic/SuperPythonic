@@ -33,7 +33,7 @@ type ran struct{ from, to rune }
 
 func Range(from, to rune) parsing.Parser {
 	if from >= to {
-		panic(fmt.Sprintf("invalid range [%c, %c]", from, to))
+		panic(fmt.Sprintf("invalid rune range [%c, %c]", from, to))
 	}
 	return &ran{from, to}
 }
@@ -206,7 +206,7 @@ func (*escapedStrPart) Parse(s parsing.State) parsing.State {
 		Word(`\`),
 		Choice(
 			Not(Choice(Word("x"), Word("u"), OctDigit())),
-			// TODO: Occur(OctDigit, 1, 3)
+			Occur(OctDigit(), 1, 3),
 			Seq(Word("x"), Times(HexDigit(), 2)),
 			Seq(Word("u"), Times(HexDigit(), 4)),
 			Seq(Word("u{"), More(HexDigit()), Word("}")),
@@ -319,6 +319,39 @@ func (p *times) Parse(s parsing.State) parsing.State {
 		}
 	}
 	return s
+}
+
+type occur struct {
+	parser   parsing.Parser
+	from, to int
+}
+
+func Occur(parser parsing.Parser, from, to int) parsing.Parser {
+	if from < 0 || to < 0 || from >= to {
+		panic(fmt.Sprintf("invalid occur range [%d, %d]", from, to))
+	}
+	return &occur{parser, from, to}
+}
+
+func (p *occur) Parse(s parsing.State) parsing.State {
+	var (
+		start        = s.Pos()
+		pos, ln, col int
+		prev         *parsing.Span
+	)
+	var n int
+	for {
+		pos, ln, col, prev = s.Dump()
+		if s = p.parser.Parse(s); s.IsError() {
+			s.Restore(pos, ln, col, prev)
+			break
+		}
+		n++
+	}
+	if p.from <= n && n <= p.to {
+		return s
+	}
+	return s.WithError(start)
 }
 
 type not struct{ parser parsing.Parser }

@@ -18,7 +18,7 @@ func TestStr(t *testing.T) {
 	ss := []string{
 		`""`,
 		`"hello"`,
-		`"Hello, \xfF!"`,
+		`"Hello, \1 \a \123 \xfF \ubeeF \u{deadbeeF}!"`,
 	}
 	for _, text := range ss {
 		if s := Str().Parse(NewState(text)); s.IsError() {

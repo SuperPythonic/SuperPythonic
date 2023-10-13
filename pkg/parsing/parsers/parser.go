@@ -23,6 +23,7 @@ var (
 	OctDigit = parsers.OctDigit
 	HexDigit = parsers.HexDigit
 	Int      = parsers.Int
+	Str      = parsers.Str
 
 	Seq    = parsers.Seq
 	Choice = parsers.Choice
@@ -30,5 +31,6 @@ var (
 	More   = parsers.More
 	Option = parsers.Option
 	Times  = parsers.Times
+	Occur  = parsers.Occur
 	Not    = parsers.Not
 )
