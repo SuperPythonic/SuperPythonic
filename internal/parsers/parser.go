@@ -198,13 +198,20 @@ func (*str) Parse(s parsing.State) parsing.State {
 }
 
 func (*unescapedStrPart) Parse(s parsing.State) parsing.State {
-	//TODO implement me
-	panic("implement me")
+	return More(Not(Choice(Word(`"`), Word(`\`)))).Parse(s)
 }
 
 func (*escapedStrPart) Parse(s parsing.State) parsing.State {
-	//TODO implement me
-	panic("implement me")
+	return Seq(
+		Word(`\`),
+		Choice(
+			Not(Choice(Word("x"), Word("u"), OctDigit())),
+			// TODO: Occur(OctDigit, 1, 3)
+			Seq(Word("x"), Times(HexDigit(), 2)),
+			Seq(Word("u"), Times(HexDigit(), 4)),
+			Seq(Word("u{"), More(HexDigit()), Word("}")),
+		),
+	).Parse(s)
 }
 
 type seq struct{ parsers []parsing.Parser }
@@ -320,9 +327,12 @@ func Not(parser parsing.Parser) parsing.Parser { return &not{parser} }
 
 func (p *not) Parse(s parsing.State) parsing.State {
 	pos, ln, col, prev := s.Dump()
-	if s = p.parser.Parse(s); !s.IsError() {
-		s.Restore(pos, ln, col, prev)
+	s = p.parser.Parse(s)
+	notMatched := s.IsError()
+	s.Restore(pos, ln, col, prev)
+	if notMatched {
+		_, _ = s.Next()
 		return s
 	}
-	return s
+	return s.WithError(pos)
 }

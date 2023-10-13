@@ -13,3 +13,16 @@ func TestInt(t *testing.T) {
 		t.Fatal(s)
 	}
 }
+
+func TestStr(t *testing.T) {
+	ss := []string{
+		`""`,
+		`"hello"`,
+		`"Hello, \xfF!"`,
+	}
+	for _, text := range ss {
+		if s := Str().Parse(NewState(text)); s.IsError() {
+			t.Fatal(s)
+		}
+	}
+}
