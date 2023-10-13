@@ -1,8 +1,6 @@
 package parsers
 
-import (
-	"github.com/SuperPythonic/SuperPythonic/internal/parsers"
-)
+import "github.com/SuperPythonic/SuperPythonic/internal/parsers"
 
 type Word = parsers.Word
 
@@ -24,6 +22,7 @@ var (
 	HexDigit = parsers.HexDigit
 	Int      = parsers.Int
 	Str      = parsers.Str
+	Bool     = parsers.Bool
 
 	Seq    = parsers.Seq
 	Choice = parsers.Choice

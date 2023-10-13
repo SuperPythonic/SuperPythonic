@@ -214,6 +214,12 @@ func (*escapedStrPart) Parse(s parsing.State) parsing.State {
 	).Parse(s)
 }
 
+type b struct{}
+
+func Bool() parsing.Parser { return (*b)(nil) }
+
+func (*b) Parse(s parsing.State) parsing.State { return Choice(Word("False"), Word("True")).Parse(s) }
+
 type seq struct{ parsers []parsing.Parser }
 
 func Seq(parsers ...parsing.Parser) parsing.Parser {
