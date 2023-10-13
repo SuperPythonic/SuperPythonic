@@ -73,6 +73,7 @@ func (s *State) WithSpan(start int) parsing.State {
 		Line:  s.ln,
 		Col:   s.col - (s.pos - start),
 	}
+	s.errAt = noErrAt
 	return s
 }
 

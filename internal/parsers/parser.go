@@ -41,20 +41,18 @@ func Range(from, to rune) parsing.Parser {
 func (p *ran) Parse(s parsing.State) parsing.State {
 	r, ok := s.Peek()
 	if !ok {
-		return s
+		return s.WithError(s.Pos())
 	}
-	if p.from <= r && r >= p.to {
+	if p.from <= r && r <= p.to {
 		_, _ = s.Next()
 		return s
 	}
 	return s.WithError(s.Pos())
 }
 
-type kw string
+type Keyword string
 
-func Keyword(word string) parsing.Parser { return kw(word) }
-
-func (p kw) Parse(s parsing.State) parsing.State {
+func (p Keyword) Parse(s parsing.State) parsing.State {
 	start := s.Pos()
 	for _, c := range p {
 		if !s.Eat(c) {
@@ -128,11 +126,11 @@ func (c *cc) Valid(r rune) bool {
 	return unicode.IsLetter(r)
 }
 
-type long struct{}
+type i struct{}
 
-func Long() parsing.Parser { return new(long) }
+func Int() parsing.Parser { return new(i) }
 
-func (*long) Parse(s parsing.State) parsing.State {
+func (*i) Parse(s parsing.State) parsing.State {
 	start := s.Pos()
 	if s = Choice(new(bin), new(oct), new(hex)).Parse(s); !s.IsError() {
 		s.WithSpan(start)
@@ -146,27 +144,35 @@ func (*bin) Parse(s parsing.State) parsing.State {
 	return Seq(
 		Choice(Keyword("0b"), Keyword("0B")),
 		Range('0', '1'),
-		Many(
-			Seq(
-				Option(Keyword("_")),
-				Range('0', '1'),
-			),
-		),
+		Many(Seq(Option(Keyword("_")), Range('0', '1'))),
 	).Parse(s)
 }
 
 type oct struct{}
 
 func (*oct) Parse(s parsing.State) parsing.State {
-	//TODO implement me
-	panic("implement me")
+	return Seq(
+		Choice(Keyword("0o"), Keyword("0O")),
+		Range('0', '7'),
+		Many(Seq(Option(Keyword("_")), Range('0', '7'))),
+	).Parse(s)
 }
 
-type hex struct{}
+type (
+	hex      struct{ digit hexDigit }
+	hexDigit struct{}
+)
 
-func (*hex) Parse(s parsing.State) parsing.State {
-	//TODO implement me
-	panic("implement me")
+func (p *hex) Parse(s parsing.State) parsing.State {
+	return Seq(
+		Choice(Keyword("0x"), Keyword("0X")),
+		&p.digit,
+		Many(Seq(Option(Keyword("_")), &p.digit)),
+	).Parse(s)
+}
+
+func (*hexDigit) Parse(s parsing.State) parsing.State {
+	return Choice(Range('0', '9'), Range('a', 'f'), Range('A', 'F')).Parse(s)
 }
 
 type seq struct{ parsers []parsing.Parser }
@@ -208,7 +214,7 @@ func (p *choice) Parse(s parsing.State) parsing.State {
 		}
 		s.Restore(pos, ln, col, prev)
 	}
-	return s
+	return s.WithError(pos)
 }
 
 type many struct{ parser parsing.Parser }
