@@ -6,6 +6,42 @@ import (
 	"github.com/SuperPythonic/SuperPythonic/pkg/theories"
 )
 
+func Lowercase(dst *theories.Var) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		if s = parsers.Lowercase(s); !s.IsError() {
+			*dst = &Var{s.Text(s.Span())}
+		}
+		return s
+	}
+}
+
+func Type(dst *theories.Expr) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		return parsers.Choice(
+			intType(dst),
+			boolType(dst),
+		)(s)
+	}
+}
+
+func intType(dst *theories.Expr) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		if s = parsers.Word("int")(s); !s.IsError() {
+			*dst = new(theories.IntType)
+		}
+		return s
+	}
+}
+
+func boolType(dst *theories.Expr) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		if s = parsers.Word("bool")(s); !s.IsError() {
+			*dst = new(theories.BoolType)
+		}
+		return s
+	}
+}
+
 func Parse(text string) (theories.Prog, parsing.State) {
 	p := new(Prog)
 	return p, parsers.Parse(p.Parse, text)
@@ -25,14 +61,7 @@ func (p *Prog) parseFn(s parsing.State) parsing.State {
 
 func (f *Fn) Parse(s parsing.State) parsing.State {
 	// TODO: Function body.
-	return parsers.Seq(parsers.Word("def"), f.parseName, f.parseParams, parsers.Word(":"))(s)
-}
-
-func (f *Fn) parseName(s parsing.State) parsing.State {
-	if s = parsers.Lowercase(s); !s.IsError() {
-		f.Name = &Var{s.Text(s.Span())}
-	}
-	return s
+	return parsers.Seq(parsers.Word("def"), Lowercase(&f.Name), f.parseParams, parsers.Word(":"))(s)
 }
 
 func (f *Fn) parseParams(s parsing.State) parsing.State {
@@ -56,33 +85,5 @@ func (f *Fn) parseParam(s parsing.State) parsing.State {
 }
 
 func (p *Param) Parse(s parsing.State) parsing.State {
-	return parsers.Seq(
-		p.parseName,
-		parsers.Word(":"),
-		parsers.Choice(
-			p.parseIntType,
-			p.parseBoolType,
-		),
-	)(s)
-}
-
-func (p *Param) parseName(s parsing.State) parsing.State {
-	if s = parsers.Lowercase(s); !s.IsError() {
-		p.name = &Var{s.Text(s.Span())}
-	}
-	return s
-}
-
-func (p *Param) parseIntType(s parsing.State) parsing.State {
-	if s = parsers.Word("int")(s); !s.IsError() {
-		p.typ = new(theories.IntType)
-	}
-	return s
-}
-
-func (p *Param) parseBoolType(s parsing.State) parsing.State {
-	if s = parsers.Word("bool")(s); !s.IsError() {
-		p.typ = new(theories.BoolType)
-	}
-	return s
+	return parsers.Seq(Lowercase(&p.name), parsers.Word(":"), Type(&p.typ))(s)
 }
