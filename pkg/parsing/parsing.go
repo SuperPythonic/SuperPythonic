@@ -28,4 +28,4 @@ type Options interface {
 	IsNewline(r rune) bool
 }
 
-type Parser interface{ Parse(s State) State }
+type ParserFunc func(s State) State

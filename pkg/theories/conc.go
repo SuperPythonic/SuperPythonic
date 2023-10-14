@@ -1,26 +1,16 @@
 package theories
 
-import "github.com/SuperPythonic/SuperPythonic/pkg/parsing"
+import "fmt"
 
 type Prog interface {
-	parsing.Parser
-
-	At(idx int) Def
+	Defs() []Def
 }
 
 type Def interface {
-	parsing.Parser
-
 	Name() Var
-	Params() Params
-}
-
-type Params interface {
-	parsing.Parser
-
-	At(idx int) Var
+	Params() []Var
 }
 
 type Var interface {
-	parsing.Parser
+	fmt.Stringer
 }

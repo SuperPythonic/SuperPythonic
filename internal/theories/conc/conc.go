@@ -2,45 +2,18 @@ package conc
 
 import "github.com/SuperPythonic/SuperPythonic/pkg/theories"
 
-type (
-	prog struct {
-		defs *defs
-	}
+type prog struct{ defs []theories.Def }
 
-	defs struct {
-		defs []theories.Def
-	}
-)
-
-func (p *prog) At(idx int) theories.Def { return p.defs.defs[idx] }
-
-func Prog() theories.Prog { return new(prog) }
+func (p *prog) Defs() []theories.Def { return p.defs }
 
 type fn struct {
 	name   theories.Var
-	params theories.Params
+	params []theories.Var
 }
 
-func (p *fn) Name() theories.Var { return p.name }
+func (p *fn) Name() theories.Var     { return p.name }
+func (p *fn) Params() []theories.Var { return p.params }
 
-func (p *fn) Params() theories.Params { return p.params }
+type Var struct{ string }
 
-func Fn() theories.Def { return new(fn) }
-
-type lcVar struct{ name string }
-
-func LowercaseVar() theories.Var { return new(lcVar) }
-
-type (
-	params struct {
-		list *paramList
-	}
-
-	paramList struct {
-		names []theories.Var
-	}
-)
-
-func (p *params) At(idx int) theories.Var { return p.list.names[idx] }
-
-func Params() theories.Params { return new(params) }
+func (v *Var) String() string { return v.string }

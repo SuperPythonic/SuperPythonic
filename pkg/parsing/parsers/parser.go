@@ -2,8 +2,6 @@ package parsers
 
 import "github.com/SuperPythonic/SuperPythonic/internal/parsers"
 
-type Word = parsers.Word
-
 var (
 	NewState = parsers.NewState
 	Parse    = parsers.Parse
@@ -12,6 +10,7 @@ var (
 	End   = parsers.End
 
 	Range = parsers.Range
+	Word  = parsers.Word
 
 	Lowercase = parsers.Lowercase
 	Uppercase = parsers.Uppercase

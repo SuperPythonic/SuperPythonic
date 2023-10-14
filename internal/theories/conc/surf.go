@@ -7,54 +7,49 @@ import (
 )
 
 func Parse(text string) (theories.Prog, parsing.State) {
-	prog := Prog()
-	return prog, parsers.Parse(prog, text)
+	p := new(prog)
+	return p, parsers.Parse(p.Parse, text)
 }
 
 func (p *prog) Parse(s parsing.State) parsing.State {
-	p.defs = new(defs)
-	return parsers.Seq(parsers.Start(), parsers.Many(parsers.Choice(p.defs)), parsers.End()).Parse(s)
+	return parsers.Seq(parsers.Start, parsers.Many(parsers.Choice(p.parseFn)), parsers.End)(s)
 }
 
-func (p *defs) Parse(s parsing.State) parsing.State {
-	def := Fn()
-	if s = def.Parse(s); !s.IsError() {
-		p.defs = append(p.defs, def)
+func (p *prog) parseFn(s parsing.State) parsing.State {
+	f := new(fn)
+	if s = f.Parse(s); !s.IsError() {
+		p.defs = append(p.defs, f)
 	}
 	return s
 }
 
 func (p *fn) Parse(s parsing.State) parsing.State {
-	p.name = LowercaseVar()
-	p.params = Params()
 	// TODO: Function body.
-	return parsers.Seq(parsers.Word("def"), p.name, p.params, parsers.Word(":")).Parse(s)
+	return parsers.Seq(parsers.Word("def"), p.parseName, p.parseParams, parsers.Word(":"))(s)
 }
 
-func (p *lcVar) Parse(s parsing.State) parsing.State {
-	if s = parsers.Lowercase().Parse(s); !s.IsError() {
-		p.name = s.Text(s.Span())
+func (p *fn) parseName(s parsing.State) parsing.State {
+	if s = parsers.Lowercase(s); !s.IsError() {
+		p.name = &Var{s.Text(s.Span())}
 	}
 	return s
 }
 
-func (p *params) Parse(s parsing.State) parsing.State {
-	p.list = new(paramList)
+func (p *fn) parseParams(s parsing.State) parsing.State {
 	return parsers.Choice(
 		parsers.Seq(parsers.Word("("), parsers.Word(")")),
 		parsers.Seq(
 			parsers.Word("("),
-			p.list,
-			parsers.Many(parsers.Seq(parsers.Word(","), p.list)),
+			p.parseParam,
+			parsers.Many(parsers.Seq(parsers.Word(","), p.parseParam)),
 			parsers.Word(")"),
 		),
-	).Parse(s)
+	)(s)
 }
 
-func (p *paramList) Parse(s parsing.State) parsing.State {
-	name := LowercaseVar()
-	if s = name.Parse(s); !s.IsError() {
-		p.names = append(p.names, name)
+func (p *fn) parseParam(s parsing.State) parsing.State {
+	if s = parsers.Lowercase(s); !s.IsError() {
+		p.params = append(p.params, &Var{s.Text(s.Span())})
 	}
 	return s
 }

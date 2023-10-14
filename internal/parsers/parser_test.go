@@ -3,13 +3,13 @@ package parsers
 import "testing"
 
 func TestInt(t *testing.T) {
-	if s := Int().Parse(NewState("0b1_01_0")); s.IsError() {
+	if s := Parse(Int, "0b1_01_0"); s.IsError() {
 		t.Fatal(s)
 	}
-	if s := Int().Parse(NewState("0o6_7_6_7")); s.IsError() {
+	if s := Parse(Int, "0o6_7_6_7"); s.IsError() {
 		t.Fatal(s)
 	}
-	if s := Int().Parse(NewState("0xdead_beef")); s.IsError() {
+	if s := Parse(Int, "0xdead_beef"); s.IsError() {
 		t.Fatal(s)
 	}
 }
@@ -21,7 +21,7 @@ func TestStr(t *testing.T) {
 		`"Hello, \1 \a \123 \xfF \ubeeF \u{deadbeeF}!"`,
 	}
 	for _, text := range ss {
-		if s := Str().Parse(NewState(text)); s.IsError() {
+		if s := Parse(Str, text); s.IsError() {
 			t.Fatal(s)
 		}
 	}
