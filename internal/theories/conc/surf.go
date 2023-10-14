@@ -30,7 +30,7 @@ func (p *Prog) Parse(s parsing.State) parsing.State {
 
 func (p *Prog) parseFn(s parsing.State) parsing.State {
 	f := new(Fn)
-	return parsers.On(f.Parse, func(parsing.State) { p.defs = append(p.defs, f) })(s)
+	return parsers.On(f.Parse, func() { p.defs = append(p.defs, f) })(s)
 }
 
 func (f *Fn) Parse(s parsing.State) parsing.State {
@@ -52,7 +52,7 @@ func (f *Fn) parseParams(s parsing.State) parsing.State {
 
 func (f *Fn) parseParam(s parsing.State) parsing.State {
 	p := new(Param)
-	return parsers.On(p.Parse, func(parsing.State) { f.Params = append(f.Params, p) })(s)
+	return parsers.On(p.Parse, func() { f.Params = append(f.Params, p) })(s)
 }
 
 func (p *Param) Parse(s parsing.State) parsing.State {

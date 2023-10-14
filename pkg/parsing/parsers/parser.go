@@ -6,9 +6,10 @@ var (
 	NewState = parsers.NewState
 	Parse    = parsers.Parse
 
-	On     = parsers.On
-	OnText = parsers.OnText
-	OnWord = parsers.OnWord
+	OnState = parsers.OnState
+	On      = parsers.On
+	OnText  = parsers.OnText
+	OnWord  = parsers.OnWord
 
 	Start = parsers.Start
 	End   = parsers.End

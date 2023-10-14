@@ -22,7 +22,7 @@ func Parse(parser parsing.ParserFunc, text string) parsing.State {
 	return parser(NewState(text))
 }
 
-func On(parser parsing.ParserFunc, f func(s parsing.State)) parsing.ParserFunc {
+func OnState(parser parsing.ParserFunc, f func(s parsing.State)) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		if s = parser(s); !s.IsError() {
 			f(s)
@@ -31,11 +31,15 @@ func On(parser parsing.ParserFunc, f func(s parsing.State)) parsing.ParserFunc {
 	}
 }
 
-func OnText(parser parsing.ParserFunc, f func(text string)) parsing.ParserFunc {
-	return On(parser, func(s parsing.State) { f(s.Text()) })
+func On(parser parsing.ParserFunc, f func()) parsing.ParserFunc {
+	return OnState(parser, func(parsing.State) { f() })
 }
 
-func OnWord(w string, f func()) parsing.ParserFunc { return On(Word(w), func(parsing.State) { f() }) }
+func OnText(parser parsing.ParserFunc, f func(text string)) parsing.ParserFunc {
+	return OnState(parser, func(s parsing.State) { f(s.Text()) })
+}
+
+func OnWord(w string, f func()) parsing.ParserFunc { return On(Word(w), f) }
 
 func (s *State) Pos() int { return s.pos }
 
