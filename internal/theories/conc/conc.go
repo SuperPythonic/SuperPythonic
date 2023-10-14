@@ -15,7 +15,7 @@ type Param struct {
 	typ  theories.Expr
 }
 
-func (p *Param) Local() theories.Var { return p.name }
+func (p *Param) Name() theories.Var  { return p.name }
 func (p *Param) Type() theories.Expr { return p.typ }
 
 type Var struct{ string }

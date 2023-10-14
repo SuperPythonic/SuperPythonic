@@ -15,6 +15,7 @@ func Type(dst *theories.Expr) parsing.ParserFunc {
 		return parsers.Choice(
 			parsers.OnWord("int", func() { *dst = new(theories.IntType) }),
 			parsers.OnWord("bool", func() { *dst = new(theories.BoolType) }),
+			parsers.OnWord("unit", func() { *dst = new(theories.UnitType) }),
 		)(s)
 	}
 }
@@ -34,8 +35,15 @@ func (p *Prog) parseFn(s parsing.State) parsing.State {
 }
 
 func (f *Fn) Parse(s parsing.State) parsing.State {
-	// TODO: Function body.
-	return parsers.Seq(parsers.Word("def"), Lowercase(&f.Name), f.parseParams, parsers.Word(":"))(s)
+	f.R = new(theories.UnitType)
+	return parsers.Seq(
+		parsers.Word("def"),
+		Lowercase(&f.N),
+		f.parseParams,
+		parsers.Option(parsers.Seq(parsers.Word("->"), Type(&f.R))),
+		parsers.Word(":"),
+		// TODO: Function body.
+	)(s)
 }
 
 func (f *Fn) parseParams(s parsing.State) parsing.State {
@@ -52,7 +60,7 @@ func (f *Fn) parseParams(s parsing.State) parsing.State {
 
 func (f *Fn) parseParam(s parsing.State) parsing.State {
 	p := new(Param)
-	return parsers.On(p.Parse, func() { f.Params = append(f.Params, p) })(s)
+	return parsers.On(p.Parse, func() { f.P = append(f.P, p) })(s)
 }
 
 func (p *Param) Parse(s parsing.State) parsing.State {
