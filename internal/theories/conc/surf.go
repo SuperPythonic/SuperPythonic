@@ -7,49 +7,82 @@ import (
 )
 
 func Parse(text string) (theories.Prog, parsing.State) {
-	p := new(prog)
+	p := new(Prog)
 	return p, parsers.Parse(p.Parse, text)
 }
 
-func (p *prog) Parse(s parsing.State) parsing.State {
+func (p *Prog) Parse(s parsing.State) parsing.State {
 	return parsers.Seq(parsers.Start, parsers.Many(parsers.Choice(p.parseFn)), parsers.End)(s)
 }
 
-func (p *prog) parseFn(s parsing.State) parsing.State {
-	f := new(fn)
+func (p *Prog) parseFn(s parsing.State) parsing.State {
+	f := new(Fn)
 	if s = f.Parse(s); !s.IsError() {
 		p.defs = append(p.defs, f)
 	}
 	return s
 }
 
-func (p *fn) Parse(s parsing.State) parsing.State {
+func (f *Fn) Parse(s parsing.State) parsing.State {
 	// TODO: Function body.
-	return parsers.Seq(parsers.Word("def"), p.parseName, p.parseParams, parsers.Word(":"))(s)
+	return parsers.Seq(parsers.Word("def"), f.parseName, f.parseParams, parsers.Word(":"))(s)
 }
 
-func (p *fn) parseName(s parsing.State) parsing.State {
+func (f *Fn) parseName(s parsing.State) parsing.State {
+	if s = parsers.Lowercase(s); !s.IsError() {
+		f.Name = &Var{s.Text(s.Span())}
+	}
+	return s
+}
+
+func (f *Fn) parseParams(s parsing.State) parsing.State {
+	return parsers.Choice(
+		parsers.Seq(parsers.Word("("), parsers.Word(")")),
+		parsers.Seq(
+			parsers.Word("("),
+			f.parseParam,
+			parsers.Many(parsers.Seq(parsers.Word(","), f.parseParam)),
+			parsers.Word(")"),
+		),
+	)(s)
+}
+
+func (f *Fn) parseParam(s parsing.State) parsing.State {
+	p := new(Param)
+	if s = p.Parse(s); !s.IsError() {
+		f.Params = append(f.Params, p)
+	}
+	return s
+}
+
+func (p *Param) Parse(s parsing.State) parsing.State {
+	return parsers.Seq(
+		p.parseName,
+		parsers.Word(":"),
+		parsers.Choice(
+			p.parseIntType,
+			p.parseBoolType,
+		),
+	)(s)
+}
+
+func (p *Param) parseName(s parsing.State) parsing.State {
 	if s = parsers.Lowercase(s); !s.IsError() {
 		p.name = &Var{s.Text(s.Span())}
 	}
 	return s
 }
 
-func (p *fn) parseParams(s parsing.State) parsing.State {
-	return parsers.Choice(
-		parsers.Seq(parsers.Word("("), parsers.Word(")")),
-		parsers.Seq(
-			parsers.Word("("),
-			p.parseParam,
-			parsers.Many(parsers.Seq(parsers.Word(","), p.parseParam)),
-			parsers.Word(")"),
-		),
-	)(s)
+func (p *Param) parseIntType(s parsing.State) parsing.State {
+	if s = parsers.Word("int")(s); !s.IsError() {
+		p.typ = new(theories.IntType)
+	}
+	return s
 }
 
-func (p *fn) parseParam(s parsing.State) parsing.State {
-	if s = parsers.Lowercase(s); !s.IsError() {
-		p.params = append(p.params, &Var{s.Text(s.Span())})
+func (p *Param) parseBoolType(s parsing.State) parsing.State {
+	if s = parsers.Word("bool")(s); !s.IsError() {
+		p.typ = new(theories.BoolType)
 	}
 	return s
 }
