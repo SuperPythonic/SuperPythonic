@@ -17,12 +17,8 @@ var (
 	CamelBack = parsers.CamelBack
 	CamelCase = parsers.CamelCase
 
-	OctDigit = parsers.OctDigit
-	HexDigit = parsers.HexDigit
-	Int      = parsers.Int
-	Str      = parsers.Str
-	Bool     = parsers.Bool
-	Unit     = parsers.Unit
+	Int = parsers.Int
+	Str = parsers.Str
 
 	Seq    = parsers.Seq
 	Choice = parsers.Choice

@@ -50,9 +50,7 @@ func Word(w string) parsing.ParserFunc {
 	}
 }
 
-type RuneFilterFunc func(r rune) bool
-
-func id(isValid RuneFilterFunc) parsing.ParserFunc {
+func id(isValid func(r rune) bool) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		start := s.Pos()
 		first := true
@@ -112,9 +110,9 @@ func CamelCase(s parsing.State) parsing.State {
 	})(s)
 }
 
-func OctDigit(s parsing.State) parsing.State { return Range('0', '7')(s) }
+func octDigit(s parsing.State) parsing.State { return Range('0', '7')(s) }
 
-func HexDigit(s parsing.State) parsing.State {
+func hexDigit(s parsing.State) parsing.State {
 	return Choice(Range('0', '9'), Range('a', 'f'), Range('A', 'F'))(s)
 }
 
@@ -137,16 +135,16 @@ func bin(s parsing.State) parsing.State {
 func oct(s parsing.State) parsing.State {
 	return Seq(
 		Choice(Word("0o"), Word("0O")),
-		OctDigit,
-		Many(Seq(Option(Word("_")), OctDigit)),
+		octDigit,
+		Many(Seq(Option(Word("_")), octDigit)),
 	)(s)
 }
 
 func hex(s parsing.State) parsing.State {
 	return Seq(
 		Choice(Word("0x"), Word("0X")),
-		HexDigit,
-		Many(Seq(Option(Word("_")), HexDigit)),
+		hexDigit,
+		Many(Seq(Option(Word("_")), hexDigit)),
 	)(s)
 }
 
@@ -166,18 +164,14 @@ func escapedStrPart(s parsing.State) parsing.State {
 	return Seq(
 		Word(`\`),
 		Choice(
-			Not(Choice(Word("x"), Word("u"), OctDigit)),
-			Occur(OctDigit, 1, 3),
-			Seq(Word("x"), Times(HexDigit, 2)),
-			Seq(Word("u"), Times(HexDigit, 4)),
-			Seq(Word("u{"), More(HexDigit), Word("}")),
+			Not(Choice(Word("x"), Word("u"), octDigit)),
+			Occur(octDigit, 1, 3),
+			Seq(Word("x"), Times(hexDigit, 2)),
+			Seq(Word("u"), Times(hexDigit, 4)),
+			Seq(Word("u{"), More(hexDigit), Word("}")),
 		),
 	)(s)
 }
-
-func Bool(s parsing.State) parsing.State { return Choice(Word("False"), Word("True"))(s) }
-
-func Unit(s parsing.State) parsing.State { return Word("()")(s) }
 
 func Seq(parsers ...parsing.ParserFunc) parsing.ParserFunc {
 	if len(parsers) == 0 {
@@ -268,11 +262,6 @@ func Option(parser parsing.ParserFunc) parsing.ParserFunc {
 		}
 		return s
 	}
-}
-
-type times struct {
-	parser parsing.ParserFunc
-	n      int
 }
 
 func Times(parser parsing.ParserFunc, n int) parsing.ParserFunc {
