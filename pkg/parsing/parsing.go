@@ -18,7 +18,7 @@ type State interface {
 	WithSpan(start int) State
 	WithError(start int) State
 	Span() *Span
-	Text(span *Span) string
+	Text() string
 
 	SkipSpaces()
 }

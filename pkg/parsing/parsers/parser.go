@@ -5,6 +5,7 @@ import "github.com/SuperPythonic/SuperPythonic/internal/parsers"
 var (
 	NewState = parsers.NewState
 	Parse    = parsers.Parse
+	On       = parsers.On
 
 	Start = parsers.Start
 	End   = parsers.End

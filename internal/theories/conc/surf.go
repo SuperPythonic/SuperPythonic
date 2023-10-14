@@ -7,12 +7,7 @@ import (
 )
 
 func Lowercase(dst *theories.Var) parsing.ParserFunc {
-	return func(s parsing.State) parsing.State {
-		if s = parsers.Lowercase(s); !s.IsError() {
-			*dst = &Var{s.Text(s.Span())}
-		}
-		return s
-	}
+	return parsers.On(parsers.Lowercase, func(s parsing.State) { *dst = &Var{s.Text()} })
 }
 
 func Type(dst *theories.Expr) parsing.ParserFunc {
@@ -25,21 +20,11 @@ func Type(dst *theories.Expr) parsing.ParserFunc {
 }
 
 func intType(dst *theories.Expr) parsing.ParserFunc {
-	return func(s parsing.State) parsing.State {
-		if s = parsers.Word("int")(s); !s.IsError() {
-			*dst = new(theories.IntType)
-		}
-		return s
-	}
+	return parsers.On(parsers.Word("int"), func(parsing.State) { *dst = new(theories.IntType) })
 }
 
 func boolType(dst *theories.Expr) parsing.ParserFunc {
-	return func(s parsing.State) parsing.State {
-		if s = parsers.Word("bool")(s); !s.IsError() {
-			*dst = new(theories.BoolType)
-		}
-		return s
-	}
+	return parsers.On(parsers.Word("bool"), func(parsing.State) { *dst = new(theories.BoolType) })
 }
 
 func Parse(text string) (theories.Prog, parsing.State) {
@@ -53,10 +38,7 @@ func (p *Prog) Parse(s parsing.State) parsing.State {
 
 func (p *Prog) parseFn(s parsing.State) parsing.State {
 	f := new(Fn)
-	if s = f.Parse(s); !s.IsError() {
-		p.defs = append(p.defs, f)
-	}
-	return s
+	return parsers.On(f.Parse, func(parsing.State) { p.defs = append(p.defs, f) })(s)
 }
 
 func (f *Fn) Parse(s parsing.State) parsing.State {
@@ -78,10 +60,7 @@ func (f *Fn) parseParams(s parsing.State) parsing.State {
 
 func (f *Fn) parseParam(s parsing.State) parsing.State {
 	p := new(Param)
-	if s = p.Parse(s); !s.IsError() {
-		f.Params = append(f.Params, p)
-	}
-	return s
+	return parsers.On(p.Parse, func(parsing.State) { f.Params = append(f.Params, p) })(s)
 }
 
 func (p *Param) Parse(s parsing.State) parsing.State {

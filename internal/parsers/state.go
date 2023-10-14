@@ -22,6 +22,15 @@ func Parse(parser parsing.ParserFunc, text string) parsing.State {
 	return parser(NewState(text))
 }
 
+func On(parser parsing.ParserFunc, f func(s parsing.State)) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		if s = parser(s); !s.IsError() {
+			f(s)
+		}
+		return s
+	}
+}
+
 func (s *State) Pos() int { return s.pos }
 
 func (s *State) Dump() (pos, ln, col int, span *parsing.Span) { return s.pos, s.ln, s.col, s.cur }
@@ -88,7 +97,7 @@ func (s *State) WithError(start int) parsing.State {
 
 func (s *State) Span() *parsing.Span { return s.cur }
 
-func (s *State) Text(span *parsing.Span) string { return string(s.text[span.Start:span.End]) }
+func (s *State) Text() string { return string(s.text[s.cur.Start:s.cur.End]) }
 
 func (s *State) SkipSpaces() {
 	for {
