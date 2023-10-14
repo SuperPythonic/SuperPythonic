@@ -5,7 +5,10 @@ import "github.com/SuperPythonic/SuperPythonic/internal/parsers"
 var (
 	NewState = parsers.NewState
 	Parse    = parsers.Parse
-	On       = parsers.On
+
+	On     = parsers.On
+	OnText = parsers.OnText
+	OnWord = parsers.OnWord
 
 	Start = parsers.Start
 	End   = parsers.End

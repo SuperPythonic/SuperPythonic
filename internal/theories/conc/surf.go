@@ -7,24 +7,16 @@ import (
 )
 
 func Lowercase(dst *theories.Var) parsing.ParserFunc {
-	return parsers.On(parsers.Lowercase, func(s parsing.State) { *dst = &Var{s.Text()} })
+	return parsers.OnText(parsers.Lowercase, func(text string) { *dst = &Var{text} })
 }
 
 func Type(dst *theories.Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		return parsers.Choice(
-			intType(dst),
-			boolType(dst),
+			parsers.OnWord("int", func() { *dst = new(theories.IntType) }),
+			parsers.OnWord("bool", func() { *dst = new(theories.BoolType) }),
 		)(s)
 	}
-}
-
-func intType(dst *theories.Expr) parsing.ParserFunc {
-	return parsers.On(parsers.Word("int"), func(parsing.State) { *dst = new(theories.IntType) })
-}
-
-func boolType(dst *theories.Expr) parsing.ParserFunc {
-	return parsers.On(parsers.Word("bool"), func(parsing.State) { *dst = new(theories.BoolType) })
 }
 
 func Parse(text string) (theories.Prog, parsing.State) {

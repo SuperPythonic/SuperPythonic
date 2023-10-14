@@ -31,6 +31,12 @@ func On(parser parsing.ParserFunc, f func(s parsing.State)) parsing.ParserFunc {
 	}
 }
 
+func OnText(parser parsing.ParserFunc, f func(text string)) parsing.ParserFunc {
+	return On(parser, func(s parsing.State) { f(s.Text()) })
+}
+
+func OnWord(w string, f func()) parsing.ParserFunc { return On(Word(w), func(parsing.State) { f() }) }
+
 func (s *State) Pos() int { return s.pos }
 
 func (s *State) Dump() (pos, ln, col int, span *parsing.Span) { return s.pos, s.ln, s.col, s.cur }
