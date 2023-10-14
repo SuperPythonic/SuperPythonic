@@ -1,23 +1,50 @@
 package conc
 
-import "github.com/SuperPythonic/SuperPythonic/pkg/theories"
+type Prog struct{ Defs []Def }
 
-type Prog struct{ defs []theories.Def }
+type (
+	Def interface {
+		Name() *Var
+		Params() []*Param
+		Ret() Expr
 
-func (p *Prog) Defs() []theories.Def { return p.defs }
+		isDef()
+	}
+
+	Decl struct {
+		N  *Var
+		Ps []*Param
+		R  Expr
+	}
+)
+
+func (d *Decl) Name() *Var       { return d.N }
+func (d *Decl) Params() []*Param { return d.Ps }
+func (d *Decl) Ret() Expr        { return d.R }
+func (*Decl) isDef()             {}
 
 type Fn struct {
-	theories.Decl
+	Decl
+	Body Expr
 }
 
 type Param struct {
-	name theories.Var
-	typ  theories.Expr
+	Name *Var
+	Type Expr
 }
-
-func (p *Param) Name() theories.Var  { return p.name }
-func (p *Param) Type() theories.Expr { return p.typ }
 
 type Var struct{ string }
 
 func (v *Var) String() string { return v.string }
+
+type Expr interface{ isExpr() }
+
+type (
+	UnitType struct{}
+	IntType  struct{}
+	BoolType struct{}
+)
+
+func (*UnitType) isExpr() {}
+func (*IntType) isExpr()  {}
+func (*BoolType) isExpr() {}

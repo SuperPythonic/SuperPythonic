@@ -1,42 +1,19 @@
 package theories
 
-import "fmt"
-
-type Prog interface {
-	Defs() []Def
-}
+import "github.com/SuperPythonic/SuperPythonic/internal/theories/conc"
 
 type (
-	Def interface {
-		Name() Var
-		Params() []Param
-		Ret() Expr
+	Prog = conc.Prog
 
-		isDef()
-	}
+	Def = conc.Def
+	Fn  = conc.Fn
 
-	Decl struct {
-		N Var
-		P []Param
-		R Expr
-	}
-)
+	Param = conc.Param
 
-func (d *Decl) Name() Var       { return d.N }
-func (d *Decl) Params() []Param { return d.P }
-func (d *Decl) Ret() Expr       { return d.R }
-func (*Decl) isDef()            {}
+	Var = conc.Var
 
-type Param interface {
-	Name() Var
-	Type() Expr
-}
+	Expr = conc.Expr
 
-type Var interface{ fmt.Stringer }
-
-type Expr interface{ isExpr() }
-
-type (
 	UnitType struct{}
 	IntType  struct{}
 	BoolType struct{}
