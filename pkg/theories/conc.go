@@ -14,11 +14,7 @@ type (
 
 	Expr = conc.Expr
 
-	UnitType struct{}
-	IntType  struct{}
-	BoolType struct{}
+	UnitType = conc.UnitType
+	IntType  = conc.IntType
+	BoolType = conc.BoolType
 )
-
-func (*UnitType) isExpr() {}
-func (*IntType) isExpr()  {}
-func (*BoolType) isExpr() {}
