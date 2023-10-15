@@ -40,19 +40,23 @@ func (v *Var) String() string { return v.string }
 type Expr interface{ isExpr() }
 
 type (
-	Int struct{ Text string }
-	Str struct{ Text string }
+	Unit struct{}
+	Int  struct{ Text string }
+	Str  struct{ Text string }
 )
 
-func (*Int) isExpr() {}
-func (*Str) isExpr() {}
+func (*Unit) isExpr() {}
+func (*Int) isExpr()  {}
+func (*Str) isExpr()  {}
 
 type (
 	UnitType struct{}
-	IntType  struct{}
 	BoolType struct{}
+	IntType  struct{}
+	StrType  struct{}
 )
 
 func (*UnitType) isExpr() {}
-func (*IntType) isExpr()  {}
 func (*BoolType) isExpr() {}
+func (*IntType) isExpr()  {}
+func (*StrType) isExpr()  {}

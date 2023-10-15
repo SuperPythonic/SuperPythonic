@@ -14,8 +14,9 @@ type (
 
 	Expr = conc.Expr
 
-	Int = conc.Int
-	Str = conc.Str
+	Unit = conc.Unit
+	Int  = conc.Int
+	Str  = conc.Str
 
 	UnitType = conc.UnitType
 	IntType  = conc.IntType

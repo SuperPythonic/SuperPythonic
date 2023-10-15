@@ -7,11 +7,11 @@ import (
 
 func TestParse(t *testing.T) {
 	const text = `
-def fn_0 ( ) :
-	return 0x42
+def fn_0 ( ) -> str:
+	return "hello"
 
    def fn_1 ( aaa :  unit )    :
-return   "hello"
+return   ()
 
 def fn_2 ( bbb  : int,  ccc: bool ) -> int:
 			return  0x42

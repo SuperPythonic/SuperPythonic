@@ -12,9 +12,10 @@ func Lowercase(dst **Var) parsing.ParserFunc {
 func TypeExpr(dst *Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		return parsers.Choice(
-			parsers.OnWord("int", func() { *dst = new(IntType) }),
-			parsers.OnWord("bool", func() { *dst = new(BoolType) }),
 			parsers.OnWord("unit", func() { *dst = new(UnitType) }),
+			parsers.OnWord("bool", func() { *dst = new(BoolType) }),
+			parsers.OnWord("int", func() { *dst = new(IntType) }),
+			parsers.OnWord("str", func() { *dst = new(StrType) }),
 		)(s)
 	}
 }
@@ -22,6 +23,7 @@ func TypeExpr(dst *Expr) parsing.ParserFunc {
 func ValueExpr(dst *Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		return parsers.Choice(
+			parsers.OnWord("()", func() { *dst = new(Unit) }),
 			parsers.OnText(parsers.Int, func(text string) { *dst = &Int{text} }),
 			parsers.OnText(parsers.Str, func(text string) { *dst = &Str{text} }),
 		)(s)
