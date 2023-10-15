@@ -41,11 +41,13 @@ type Expr interface{ isExpr() }
 
 type (
 	Unit struct{}
+	Bool bool
 	Int  struct{ Text string }
 	Str  struct{ Text string }
 )
 
 func (*Unit) isExpr() {}
+func (Bool) isExpr()  {}
 func (*Int) isExpr()  {}
 func (*Str) isExpr()  {}
 

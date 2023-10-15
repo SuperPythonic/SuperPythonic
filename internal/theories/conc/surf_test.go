@@ -15,6 +15,10 @@ return   ()
 
 def fn_2 ( bbb  : int,  ccc: bool ) -> int:
 			return  0x42
+
+def fn_3() -> bool: return True
+
+def fn_4(): return
     `
 	prog, s := Parse(text)
 	if s.IsError() {

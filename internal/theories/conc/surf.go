@@ -24,6 +24,8 @@ func ValueExpr(dst *Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		return parsers.Choice(
 			parsers.OnWord("()", func() { *dst = new(Unit) }),
+			parsers.OnWord("False", func() { *dst = Bool(false) }),
+			parsers.OnWord("True", func() { *dst = Bool(true) }),
 			parsers.OnText(parsers.Int, func(text string) { *dst = &Int{text} }),
 			parsers.OnText(parsers.Str, func(text string) { *dst = &Str{text} }),
 		)(s)
@@ -46,6 +48,7 @@ func (p *Prog) parseFn(s parsing.State) parsing.State {
 
 func (f *Fn) Parse(s parsing.State) parsing.State {
 	f.R = new(UnitType)
+	f.Body = new(Unit)
 	return parsers.Seq(
 		parsers.Word("def"),
 		Lowercase(&f.N),
@@ -53,7 +56,7 @@ func (f *Fn) Parse(s parsing.State) parsing.State {
 		parsers.Option(parsers.Seq(parsers.Word("->"), TypeExpr(&f.R))),
 		parsers.Word(":"),
 		parsers.Word("return"),
-		ValueExpr(&f.Body),
+		parsers.Option(ValueExpr(&f.Body)),
 	)(s)
 }
 
