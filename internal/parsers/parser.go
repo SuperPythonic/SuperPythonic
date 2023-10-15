@@ -80,13 +80,10 @@ func id(isValid func(r rune) bool) parsing.ParserFunc {
 	}
 }
 
-func Lowercase(s parsing.State) parsing.State {
-	return id(func(r rune) bool { return unicode.IsLower(r) || r == '_' })(s)
-}
-
-func Uppercase(s parsing.State) parsing.State {
-	return id(func(r rune) bool { return unicode.IsUpper(r) || r == '_' })(s)
-}
+var (
+	Lowercase = id(func(r rune) bool { return unicode.IsLower(r) || r == '_' })
+	Uppercase = id(func(r rune) bool { return unicode.IsUpper(r) || r == '_' })
+)
 
 func CamelBack(s parsing.State) parsing.State {
 	first := true
@@ -110,62 +107,42 @@ func CamelCase(s parsing.State) parsing.State {
 	})(s)
 }
 
-func octDigit(s parsing.State) parsing.State { return Range('0', '7')(s) }
-
-func hexDigit(s parsing.State) parsing.State {
-	return Choice(Range('0', '9'), Range('a', 'f'), Range('A', 'F'))(s)
-}
+var (
+	decDigit        = Range('0', '9')
+	decNonZeroDigit = Range('1', '9')
+	binDigit        = Range('0', '1')
+	octDigit        = Range('0', '7')
+	hexDigit        = Choice(decDigit, Range('a', 'f'), Range('A', 'F'))
+)
 
 func Int(s parsing.State) parsing.State {
 	start := s.Pos()
-	if s = parsing.Atom(Choice(bin, oct, hex))(s); !s.IsError() {
+	if s = parsing.Atom(Choice(dec, bin, oct, hex))(s); !s.IsError() {
 		s.WithSpan(start)
 	}
 	return s
 }
 
-func bin(s parsing.State) parsing.State {
-	return Seq(
-		Choice(Word("0b"), Word("0B")),
-		Range('0', '1'),
-		Many(Seq(Option(Word("_")), Range('0', '1'))),
-	)(s)
-}
+var decDigits = Seq(decDigit, Many(Seq(Option(Word("_")), decDigit)))
 
-func oct(s parsing.State) parsing.State {
-	return Seq(
-		Choice(Word("0o"), Word("0O")),
-		octDigit,
-		Many(Seq(Option(Word("_")), octDigit)),
-	)(s)
-}
-
-func hex(s parsing.State) parsing.State {
-	return Seq(
-		Choice(Word("0x"), Word("0X")),
-		hexDigit,
-		Many(Seq(Option(Word("_")), hexDigit)),
-	)(s)
-}
+var (
+	dec = Choice(decDigits)
+	bin = Seq(Choice(Word("0b"), Word("0B")), binDigit, Many(Seq(Option(Word("_")), binDigit)))
+	oct = Seq(Choice(Word("0o"), Word("0O")), octDigit, Many(Seq(Option(Word("_")), octDigit)))
+	hex = Seq(Choice(Word("0x"), Word("0X")), hexDigit, Many(Seq(Option(Word("_")), hexDigit)))
+)
 
 func Str(s parsing.State) parsing.State {
 	start := s.Pos()
-	if s = parsing.Atom(Seq(
-		Word(`"`),
-		Many(Choice(unescapedStrPart, escapedStrPart)),
-		Word(`"`),
-	))(s); !s.IsError() {
+	if s = parsing.Atom(Seq(Word(`"`), Many(Choice(unescaped, escaped)), Word(`"`)))(s); !s.IsError() {
 		s.WithSpan(start)
 	}
 	return s
 }
 
-func unescapedStrPart(s parsing.State) parsing.State {
-	return More(Not(Choice(Word(`"`), Word(`\`))))(s)
-}
-
-func escapedStrPart(s parsing.State) parsing.State {
-	return Seq(
+var (
+	unescaped = More(Not(Choice(Word(`"`), Word(`\`))))
+	escaped   = Seq(
 		Word(`\`),
 		Choice(
 			Not(Choice(Word("x"), Word("u"), octDigit)),
@@ -174,8 +151,8 @@ func escapedStrPart(s parsing.State) parsing.State {
 			Seq(Word("u"), Times(hexDigit, 4)),
 			Seq(Word("u{"), More(hexDigit), Word("}")),
 		),
-	)(s)
-}
+	)
+)
 
 func Seq(parsers ...parsing.ParserFunc) parsing.ParserFunc {
 	if len(parsers) == 0 {

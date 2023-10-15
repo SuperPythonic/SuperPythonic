@@ -14,7 +14,7 @@ def fn_0 ( ) -> str:
 return   ()
 
 def fn_2 ( bbb  : int,  ccc: bool ) -> int:
-			return  0x42
+			return  42
 
 def fn_3() -> bool: return True
 
