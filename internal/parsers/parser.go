@@ -149,11 +149,15 @@ func hex(s parsing.State) parsing.State {
 }
 
 func Str(s parsing.State) parsing.State {
-	return parsing.Atom(Seq(
+	start := s.Pos()
+	if s = parsing.Atom(Seq(
 		Word(`"`),
 		Many(Choice(unescapedStrPart, escapedStrPart)),
 		Word(`"`),
-	))(s)
+	))(s); !s.IsError() {
+		s.WithSpan(start)
+	}
+	return s
 }
 
 func unescapedStrPart(s parsing.State) parsing.State {

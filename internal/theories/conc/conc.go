@@ -41,9 +41,11 @@ type Expr interface{ isExpr() }
 
 type (
 	Int struct{ Text string }
+	Str struct{ Text string }
 )
 
 func (*Int) isExpr() {}
+func (*Str) isExpr() {}
 
 type (
 	UnitType struct{}

@@ -23,6 +23,7 @@ func ValueExpr(dst *Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		return parsers.Choice(
 			parsers.OnText(parsers.Int, func(text string) { *dst = &Int{text} }),
+			parsers.OnText(parsers.Str, func(text string) { *dst = &Str{text} }),
 		)(s)
 	}
 }
