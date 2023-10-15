@@ -118,7 +118,7 @@ func hexDigit(s parsing.State) parsing.State {
 
 func Int(s parsing.State) parsing.State {
 	start := s.Pos()
-	if s = Choice(bin, oct, hex)(s); !s.IsError() {
+	if s = parsing.Atom(Choice(bin, oct, hex))(s); !s.IsError() {
 		s.WithSpan(start)
 	}
 	return s
@@ -149,11 +149,11 @@ func hex(s parsing.State) parsing.State {
 }
 
 func Str(s parsing.State) parsing.State {
-	return Seq(
+	return parsing.Atom(Seq(
 		Word(`"`),
 		Many(Choice(unescapedStrPart, escapedStrPart)),
 		Word(`"`),
-	)(s)
+	))(s)
 }
 
 func unescapedStrPart(s parsing.State) parsing.State {

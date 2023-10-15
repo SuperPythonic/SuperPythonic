@@ -9,12 +9,20 @@ func Lowercase(dst **Var) parsing.ParserFunc {
 	return parsers.OnText(parsers.Lowercase, func(text string) { *dst = &Var{text} })
 }
 
-func Type(dst *Expr) parsing.ParserFunc {
+func TypeExpr(dst *Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		return parsers.Choice(
 			parsers.OnWord("int", func() { *dst = new(IntType) }),
 			parsers.OnWord("bool", func() { *dst = new(BoolType) }),
 			parsers.OnWord("unit", func() { *dst = new(UnitType) }),
+		)(s)
+	}
+}
+
+func ValueExpr(dst *Expr) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		return parsers.Choice(
+			parsers.OnText(parsers.Int, func(text string) { *dst = &Int{text} }),
 		)(s)
 	}
 }
@@ -39,9 +47,10 @@ func (f *Fn) Parse(s parsing.State) parsing.State {
 		parsers.Word("def"),
 		Lowercase(&f.N),
 		f.parseParams,
-		parsers.Option(parsers.Seq(parsers.Word("->"), Type(&f.R))),
+		parsers.Option(parsers.Seq(parsers.Word("->"), TypeExpr(&f.R))),
 		parsers.Word(":"),
-		// TODO: Function body.
+		parsers.Word("return"),
+		ValueExpr(&f.Body),
 	)(s)
 }
 
@@ -63,5 +72,5 @@ func (f *Fn) parseParam(s parsing.State) parsing.State {
 }
 
 func (p *Param) Parse(s parsing.State) parsing.State {
-	return parsers.Seq(Lowercase(&p.Name), parsers.Word(":"), Type(&p.Type))(s)
+	return parsers.Seq(Lowercase(&p.Name), parsers.Word(":"), TypeExpr(&p.Type))(s)
 }

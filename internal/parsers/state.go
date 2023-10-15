@@ -10,6 +10,7 @@ type State struct {
 	pos, ln, col int
 	cur          *parsing.Span
 	errAt        int
+	atomic       bool
 }
 
 func NewState(text string) *State { return NewStateWith(text, new(opts)) }
@@ -109,7 +110,13 @@ func (s *State) Span() *parsing.Span { return s.cur }
 
 func (s *State) Text() string { return string(s.text[s.cur.Start:s.cur.End]) }
 
+func (s *State) Lock()   { s.atomic = true }
+func (s *State) Unlock() { s.atomic = false }
+
 func (s *State) SkipSpaces() {
+	if s.atomic {
+		return
+	}
 	for {
 		if s.pos >= len(s.text) {
 			return
