@@ -1,7 +1,5 @@
 package parsing
 
-import "sync"
-
 type Span struct{ Start, End, Line, Col int }
 
 type State interface {
@@ -22,7 +20,8 @@ type State interface {
 	Span() *Span
 	Text() string
 
-	sync.Locker
+	IsAtomic() bool
+	SetAtomic(atomic bool)
 	SkipSpaces()
 }
 
@@ -35,8 +34,9 @@ type ParserFunc func(s State) State
 
 func Atom(parser ParserFunc) ParserFunc {
 	return func(s State) State {
-		s.Lock()
-		defer s.Unlock()
+		prev := s.IsAtomic()
+		s.SetAtomic(true)
+		defer s.SetAtomic(prev)
 		return parser(s)
 	}
 }

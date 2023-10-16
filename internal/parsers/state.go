@@ -110,8 +110,8 @@ func (s *State) Span() *parsing.Span { return s.cur }
 
 func (s *State) Text() string { return string(s.text[s.cur.Start:s.cur.End]) }
 
-func (s *State) Lock()   { s.atomic = true }
-func (s *State) Unlock() { s.atomic = false }
+func (s *State) IsAtomic() bool        { return s.atomic }
+func (s *State) SetAtomic(atomic bool) { s.atomic = atomic }
 
 func (s *State) SkipSpaces() {
 	if s.atomic {
