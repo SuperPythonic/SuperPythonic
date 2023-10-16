@@ -72,6 +72,7 @@ func (s *State) Next() (rune, bool) {
 	if s.opts.IsNewline(r) {
 		s.ln++
 		s.col = 1
+		s.opts.OnNewline(s)
 	}
 
 	return r, true
@@ -118,14 +119,10 @@ func (s *State) SkipSpaces() {
 		return
 	}
 	for {
-		if s.pos >= len(s.text) {
-			return
+		if r, ok := s.Peek(); ok && s.opts.IsSpace(r) {
+			s.Eat(r)
+			continue
 		}
-
-		r := s.text[s.pos]
-		if !s.opts.IsSpace(r) {
-			return
-		}
-		s.Eat(r)
+		break
 	}
 }

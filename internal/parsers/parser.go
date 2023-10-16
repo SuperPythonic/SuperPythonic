@@ -31,7 +31,7 @@ func Range(from, to rune) parsing.ParserFunc {
 			return s.WithError(s.Pos())
 		}
 		if from <= r && r <= to {
-			_, _ = s.Next()
+			_ = s.Eat(r)
 			return s
 		}
 		return s.WithError(s.Pos())
@@ -70,7 +70,7 @@ func id(isValid func(r rune) bool) parsing.ParserFunc {
 				break
 			}
 
-			_, _ = s.Next()
+			_ = s.Eat(r)
 		}
 
 		if start == s.Pos() {

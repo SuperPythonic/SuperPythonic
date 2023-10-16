@@ -28,6 +28,8 @@ type State interface {
 type Options interface {
 	IsSpace(r rune) bool
 	IsNewline(r rune) bool
+	IndentWord() string
+	OnNewline(state State)
 }
 
 type ParserFunc func(s State) State
