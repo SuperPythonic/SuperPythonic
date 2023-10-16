@@ -1,6 +1,7 @@
 package conc
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -18,8 +19,10 @@ def f1() -> str:
 `,
 	}
 	for _, text := range texts {
-		if _, s := Parse(text); s.IsError() {
+		prog, s := Parse(text)
+		if s.IsError() {
 			t.Fatal(s)
 		}
+		fmt.Println(prog)
 	}
 }

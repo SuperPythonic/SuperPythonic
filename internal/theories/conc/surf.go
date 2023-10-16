@@ -62,7 +62,7 @@ func (f *Fn) Parse(s parsing.State) parsing.State {
 		parsers.Option(parsers.Seq(parsers.Word("->"), TypeExpr(&f.R))),
 		parsers.Word(":"),
 		parsers.Entry,
-		f.parseBody,
+		FnBody(&f.Body),
 		parsers.Exit,
 	)(s)
 }
@@ -84,29 +84,32 @@ func (f *Fn) parseParam(s parsing.State) parsing.State {
 	return parsers.On(p.Parse, func() { f.Ps = append(f.Ps, p) })(s)
 }
 
-func (f *Fn) parseBody(s parsing.State) parsing.State {
-	f.Body = new(Unit)
-	return parsers.Choice(f.parseBodyLet, f.parseBodyRet)(s)
+func FnBody(dst *Expr) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		return parsers.Choice(FnBodyLet(dst), FnBodyRet(dst))(s)
+	}
 }
 
-func (f *Fn) parseBodyLet(s parsing.State) parsing.State {
-	l := new(Let)
-	return parsers.Seq(
-		Lowercase(&l.Name),
-		parsers.Option(parsers.Seq(parsers.Word(":"), TypeExpr(&l.Type))),
-		parsers.Word("="),
-		ValueExpr(&l.Value),
-		parsers.Newline,
-		parsers.Indent,
-		f.parseBody,
-	)(s)
+func FnBodyLet(dst *Expr) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		l := new(Let)
+		*dst = l
+		return parsers.Seq(
+			Lowercase(&l.Name),
+			parsers.Option(parsers.Seq(parsers.Word(":"), TypeExpr(&l.Type))),
+			parsers.Word("="),
+			ValueExpr(&l.Value),
+			parsers.Newline,
+			parsers.Indent,
+			FnBody(&l.Body),
+		)(s)
+	}
 }
 
-func (f *Fn) parseBodyRet(s parsing.State) parsing.State {
-	return parsers.Seq(
-		parsers.Word("return"),
-		parsers.Option(ValueExpr(&f.Body)),
-	)(s)
+func FnBodyRet(dst *Expr) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		return parsers.Seq(parsers.Word("return"), parsers.Option(ValueExpr(dst)))(s)
+	}
 }
 
 func (p *Param) Parse(s parsing.State) parsing.State {
