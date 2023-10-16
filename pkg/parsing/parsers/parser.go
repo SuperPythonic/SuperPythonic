@@ -14,6 +14,11 @@ var (
 	Start = parsers.Start
 	End   = parsers.End
 
+	Newline = parsers.Newline
+	Entry   = parsers.Entry
+	Indent  = parsers.Indent
+	Exit    = parsers.Exit
+
 	Range = parsers.Range
 	Word  = parsers.Word
 

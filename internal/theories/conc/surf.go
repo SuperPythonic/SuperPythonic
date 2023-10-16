@@ -38,7 +38,13 @@ func Parse(text string) (*Prog, parsing.State) {
 }
 
 func (p *Prog) Parse(s parsing.State) parsing.State {
-	return parsers.Seq(parsers.Start, parsers.Many(parsers.Choice(p.parseFn)), parsers.End)(s)
+	return parsers.Seq(
+		parsers.Start,
+		parsers.Many(parsers.Newline),
+		parsers.Many(parsers.Choice(p.parseFn)),
+		parsers.Many(parsers.Newline),
+		parsers.End,
+	)(s)
 }
 
 func (p *Prog) parseFn(s parsing.State) parsing.State {
@@ -55,8 +61,10 @@ func (f *Fn) Parse(s parsing.State) parsing.State {
 		f.parseParams,
 		parsers.Option(parsers.Seq(parsers.Word("->"), TypeExpr(&f.R))),
 		parsers.Word(":"),
+		parsers.Entry,
 		parsers.Word("return"),
 		parsers.Option(ValueExpr(&f.Body)),
+		parsers.Exit,
 	)(s)
 }
 

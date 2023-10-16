@@ -1,6 +1,10 @@
 package parsers
 
-import "github.com/SuperPythonic/SuperPythonic/pkg/parsing"
+import (
+	"strings"
+
+	"github.com/SuperPythonic/SuperPythonic/pkg/parsing"
+)
 
 const noErrAt = -1
 
@@ -11,6 +15,7 @@ type State struct {
 	cur          *parsing.Span
 	errAt        int
 	atomic       bool
+	depth        int
 }
 
 func NewState(text string) *State { return NewStateWith(text, new(opts)) }
@@ -42,6 +47,8 @@ func OnText(parser parsing.ParserFunc, f func(text string)) parsing.ParserFunc {
 
 func OnWord(w string, f func()) parsing.ParserFunc { return On(Word(w), f) }
 
+func (s *State) Options() parsing.Options { return s.opts }
+
 func (s *State) Pos() int { return s.pos }
 
 func (s *State) Dump() (pos, ln, col int, span *parsing.Span) { return s.pos, s.ln, s.col, s.cur }
@@ -69,10 +76,9 @@ func (s *State) Next() (rune, bool) {
 	s.pos++
 	s.col++
 
-	if s.opts.IsNewline(r) {
+	if r == s.opts.Newline() {
 		s.ln++
 		s.col = 1
-		s.opts.OnNewline(s)
 	}
 
 	return r, true
@@ -125,4 +131,18 @@ func (s *State) SkipSpaces() {
 		}
 		break
 	}
+}
+
+func (s *State) IndentWord() string {
+	opts := s.Options()
+	return strings.Repeat(string(opts.Indent()), opts.IndentWordN())
+}
+func (s *State) Depth() int               { return s.depth }
+func (s *State) WithEntry() parsing.State { s.depth++; return s }
+func (s *State) WithExit() parsing.State {
+	if s.depth == 0 {
+		return s.WithError(s.Pos())
+	}
+	s.depth--
+	return s
 }

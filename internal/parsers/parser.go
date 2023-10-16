@@ -21,6 +21,37 @@ func End(s parsing.State) parsing.State {
 	return s
 }
 
+func Newline(s parsing.State) parsing.State {
+	return Word(string(s.Options().Newline()))(s)
+}
+
+func Entry(s parsing.State) parsing.State {
+	parsers := []parsing.ParserFunc{Option(Newline)}
+	for i := 0; i < s.Depth()+1; i++ {
+		parsers = append(parsers, Word(s.IndentWord()))
+	}
+	if s = parsing.Atom(Seq(parsers...))(s); !s.IsError() {
+		return s.WithEntry()
+	}
+	return s
+}
+
+func Indent(s parsing.State) parsing.State {
+	var parsers []parsing.ParserFunc
+	for i := 0; i < s.Depth(); i++ {
+		parsers = append(parsers, Word(s.IndentWord()))
+	}
+	if s = parsing.Atom(Seq(parsers...))(s); !s.IsError() {
+		return s.WithEntry()
+	}
+	return s
+}
+
+func Exit(s parsing.State) parsing.State {
+	Option(Newline)(s)
+	return s.WithExit()
+}
+
 func Range(from, to rune) parsing.ParserFunc {
 	if from >= to {
 		panic(fmt.Sprintf("invalid rune range [%c, %c]", from, to))

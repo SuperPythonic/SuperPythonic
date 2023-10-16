@@ -1,14 +1,10 @@
 package parsers
 
-import (
-	"unicode"
-
-	"github.com/SuperPythonic/SuperPythonic/pkg/parsing"
-)
+import "unicode"
 
 type opts struct{}
 
-func (*opts) IsSpace(r rune) bool     { return unicode.IsSpace(r) }
-func (*opts) IsNewline(r rune) bool   { return r == '\n' }
-func (*opts) IndentWord() string      { return "\t" }
-func (*opts) OnNewline(parsing.State) {}
+func (o *opts) IsSpace(r rune) bool { return r != o.Newline() && r != o.Indent() && unicode.IsSpace(r) }
+func (*opts) Newline() rune         { return '\n' }
+func (*opts) Indent() rune          { return '\t' }
+func (*opts) IndentWordN() int      { return 1 }

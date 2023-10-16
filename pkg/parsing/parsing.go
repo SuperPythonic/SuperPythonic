@@ -3,6 +3,8 @@ package parsing
 type Span struct{ Start, End, Line, Col int }
 
 type State interface {
+	Options() Options
+
 	Pos() int
 	Dump() (pos, ln, col int, span *Span)
 	Restore(pos, ln, col int, span *Span)
@@ -23,13 +25,18 @@ type State interface {
 	IsAtomic() bool
 	SetAtomic(atomic bool)
 	SkipSpaces()
+
+	IndentWord() string
+	Depth() int
+	WithEntry() State
+	WithExit() State
 }
 
 type Options interface {
 	IsSpace(r rune) bool
-	IsNewline(r rune) bool
-	IndentWord() string
-	OnNewline(state State)
+	Newline() rune
+	Indent() rune
+	IndentWordN() int
 }
 
 type ParserFunc func(s State) State
