@@ -109,6 +109,7 @@ func (s *State) WithSpan(start int) parsing.State {
 }
 
 func (s *State) WithError(start int) parsing.State {
+	s.cur = nil
 	s.errAt = start
 	return s
 }

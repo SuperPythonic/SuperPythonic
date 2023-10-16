@@ -14,9 +14,11 @@ type (
 
 	Expr = conc.Expr
 
+	Ref  = conc.Ref
 	Unit = conc.Unit
 	Int  = conc.Int
 	Str  = conc.Str
+	Let  = conc.Let
 
 	UnitType = conc.UnitType
 	IntType  = conc.IntType

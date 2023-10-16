@@ -12,7 +12,9 @@ def f0() -> str:
 `,
 		`
 def f1() -> str:
-	return "hi"
+	a: str = "hi"
+	b: int = 42
+	return b
 `,
 	}
 	for _, text := range texts {

@@ -40,16 +40,23 @@ func (v *Var) String() string { return v.string }
 type Expr interface{ isExpr() }
 
 type (
+	Ref  struct{ Name *Var }
 	Unit struct{}
 	Bool bool
 	Int  struct{ Text string }
 	Str  struct{ Text string }
+	Let  struct {
+		Name              *Var
+		Type, Value, Body Expr
+	}
 )
 
+func (*Ref) isExpr()  {}
 func (*Unit) isExpr() {}
 func (Bool) isExpr()  {}
 func (*Int) isExpr()  {}
 func (*Str) isExpr()  {}
+func (*Let) isExpr()  {}
 
 type (
 	UnitType struct{}

@@ -41,10 +41,7 @@ func Indent(s parsing.State) parsing.State {
 	for i := 0; i < s.Depth(); i++ {
 		parsers = append(parsers, Word(s.IndentWord()))
 	}
-	if s = parsing.Atom(Seq(parsers...))(s); !s.IsError() {
-		return s.WithEntry()
-	}
-	return s
+	return parsing.Atom(Seq(parsers...))(s)
 }
 
 func Exit(s parsing.State) parsing.State {
@@ -107,7 +104,10 @@ func id(isValid func(r rune) bool) parsing.ParserFunc {
 		if start == s.Pos() {
 			return s.WithError(start)
 		}
-		return s.WithSpan(start)
+		if s = s.WithSpan(start); s.Options().IsKeyword(s.Text()) {
+			return s.WithError(start)
+		}
+		return s
 	}
 }
 

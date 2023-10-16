@@ -23,6 +23,7 @@ func TypeExpr(dst *Expr) parsing.ParserFunc {
 func ValueExpr(dst *Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		return parsers.Choice(
+			parsers.OnText(parsers.Lowercase, func(text string) { *dst = &Ref{&Var{text}} }),
 			parsers.OnWord("()", func() { *dst = new(Unit) }),
 			parsers.OnWord("False", func() { *dst = Bool(false) }),
 			parsers.OnWord("True", func() { *dst = Bool(true) }),
@@ -54,7 +55,6 @@ func (p *Prog) parseFn(s parsing.State) parsing.State {
 
 func (f *Fn) Parse(s parsing.State) parsing.State {
 	f.R = new(UnitType)
-	f.Body = new(Unit)
 	return parsers.Seq(
 		parsers.Word("def"),
 		Lowercase(&f.N),
@@ -62,8 +62,7 @@ func (f *Fn) Parse(s parsing.State) parsing.State {
 		parsers.Option(parsers.Seq(parsers.Word("->"), TypeExpr(&f.R))),
 		parsers.Word(":"),
 		parsers.Entry,
-		parsers.Word("return"),
-		parsers.Option(ValueExpr(&f.Body)),
+		f.parseBody,
 		parsers.Exit,
 	)(s)
 }
@@ -83,6 +82,31 @@ func (f *Fn) parseParams(s parsing.State) parsing.State {
 func (f *Fn) parseParam(s parsing.State) parsing.State {
 	p := new(Param)
 	return parsers.On(p.Parse, func() { f.Ps = append(f.Ps, p) })(s)
+}
+
+func (f *Fn) parseBody(s parsing.State) parsing.State {
+	f.Body = new(Unit)
+	return parsers.Choice(f.parseBodyLet, f.parseBodyRet)(s)
+}
+
+func (f *Fn) parseBodyLet(s parsing.State) parsing.State {
+	l := new(Let)
+	return parsers.Seq(
+		Lowercase(&l.Name),
+		parsers.Option(parsers.Seq(parsers.Word(":"), TypeExpr(&l.Type))),
+		parsers.Word("="),
+		ValueExpr(&l.Value),
+		parsers.Newline,
+		parsers.Indent,
+		f.parseBody,
+	)(s)
+}
+
+func (f *Fn) parseBodyRet(s parsing.State) parsing.State {
+	return parsers.Seq(
+		parsers.Word("return"),
+		parsers.Option(ValueExpr(&f.Body)),
+	)(s)
 }
 
 func (p *Param) Parse(s parsing.State) parsing.State {
