@@ -26,7 +26,7 @@ func Newline(s parsing.State) parsing.State {
 }
 
 func Entry(s parsing.State) parsing.State {
-	parsers := []parsing.ParserFunc{Option(Newline)}
+	parsers := []parsing.ParserFunc{Newline}
 	for i := 0; i < s.Depth()+1; i++ {
 		parsers = append(parsers, Word(s.IndentWord()))
 	}
