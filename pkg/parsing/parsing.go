@@ -37,7 +37,6 @@ type Options interface {
 	Newline() rune
 	Indent() rune
 	IndentWordN() int
-	IsKeyword(text string) bool
 }
 
 type ParserFunc func(s State) State

@@ -104,10 +104,7 @@ func id(isValid func(r rune) bool) parsing.ParserFunc {
 		if start == s.Pos() {
 			return s.WithError(start)
 		}
-		if s = s.WithSpan(start); s.Options().IsKeyword(s.Text()) {
-			return s.WithError(start)
-		}
-		return s
+		return s.WithSpan(start)
 	}
 }
 
