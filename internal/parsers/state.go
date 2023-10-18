@@ -16,12 +16,20 @@ type State struct {
 	errAt        int
 	atomic       bool
 	depth        int
+	indent       string
 }
 
 func NewState(text string) *State { return NewStateWith(text, new(opts)) }
 
 func NewStateWith(text string, opt parsing.Options) *State {
-	return &State{opts: opt, text: []rune(text), ln: 1, col: 1, errAt: noErrAt}
+	return &State{
+		opts:   opt,
+		text:   []rune(text),
+		ln:     1,
+		col:    1,
+		errAt:  noErrAt,
+		indent: strings.Repeat(string(opt.Indent()), opt.IndentWordN()),
+	}
 }
 
 func Parse(parser parsing.ParserFunc, text string) parsing.State {
@@ -134,10 +142,7 @@ func (s *State) SkipSpaces() {
 	}
 }
 
-func (s *State) IndentWord() string {
-	opts := s.Options()
-	return strings.Repeat(string(opts.Indent()), opts.IndentWordN())
-}
+func (s *State) IndentWord() string       { return s.indent }
 func (s *State) Depth() int               { return s.depth }
 func (s *State) WithEntry() parsing.State { s.depth++; return s }
 func (s *State) WithExit() parsing.State {
