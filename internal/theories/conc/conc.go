@@ -44,7 +44,7 @@ type (
 	Unit struct{}
 	Bool bool
 	Int  struct{ Text string }
-	Str  struct{ Text string }
+	Str  string
 	Let  struct {
 		Name              *Var
 		Type, Value, Body Expr
@@ -55,7 +55,7 @@ func (*Ref) isExpr()  {}
 func (*Unit) isExpr() {}
 func (Bool) isExpr()  {}
 func (*Int) isExpr()  {}
-func (*Str) isExpr()  {}
+func (Str) isExpr()   {}
 func (*Let) isExpr()  {}
 
 type (
