@@ -94,7 +94,10 @@ func Params(dst *[]*conc.Param) parsing.ParserFunc {
 
 func FnBody(dst *conc.Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
-		return parsers.Choice(FnBodyLet(dst), FnBodyRet(dst))(s)
+		return parsers.Choice(
+			FnBodyLet(dst),
+			parsers.Seq(parsers.Word("return"), parsers.Option(ValueExpr(dst))),
+		)(s)
 	}
 }
 
@@ -111,11 +114,5 @@ func FnBodyLet(dst *conc.Expr) parsing.ParserFunc {
 			parsers.Indent,
 			FnBody(&l.Body),
 		)(s)
-	}
-}
-
-func FnBodyRet(dst *conc.Expr) parsing.ParserFunc {
-	return func(s parsing.State) parsing.State {
-		return parsers.Seq(parsers.Word("return"), parsers.Option(ValueExpr(dst)))(s)
 	}
 }
