@@ -33,9 +33,9 @@ type Param struct {
 	Type Expr
 }
 
-type Var struct{ string }
+type Var struct{ Text string }
 
-func (v *Var) String() string { return v.string }
+func (v *Var) String() string { return v.Text }
 
 type Expr interface{ isExpr() }
 
