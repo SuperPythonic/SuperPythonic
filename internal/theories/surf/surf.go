@@ -20,6 +20,7 @@ func TypeExpr(dst *conc.Expr) parsing.ParserFunc {
 		return parsers.Choice(
 			parsers.OnWord("unit", func() { *dst = new(conc.UnitType) }),
 			parsers.OnWord("bool", func() { *dst = new(conc.BoolType) }),
+			parsers.OnWord("float", func() { *dst = new(conc.FloatType) }),
 			parsers.OnWord("int", func() { *dst = new(conc.IntType) }),
 			parsers.OnWord("str", func() { *dst = new(conc.StrType) }),
 		)(s)
@@ -33,6 +34,7 @@ func ValueExpr(dst *conc.Expr) parsing.ParserFunc {
 			parsers.OnWord("()", func() { *dst = new(conc.Unit) }),
 			parsers.OnWord("False", func() { *dst = conc.Bool(false) }),
 			parsers.OnWord("True", func() { *dst = conc.Bool(true) }),
+			parsers.OnText(parsers.Float, func(text string) { *dst = &conc.Float{Text: text} }),
 			parsers.OnText(parsers.Int, func(text string) { *dst = &conc.Int{Text: text} }),
 			parsers.OnText(parsers.Str, func(text string) { *dst = conc.Str(text) }),
 		)(s)

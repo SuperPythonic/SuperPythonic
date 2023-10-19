@@ -14,13 +14,16 @@ type (
 
 	Expr = conc.Expr
 
-	Ref  = conc.Ref
-	Unit = conc.Unit
-	Int  = conc.Int
-	Str  = conc.Str
-	Let  = conc.Let
+	Ref   = conc.Ref
+	Unit  = conc.Unit
+	Int   = conc.Int
+	Float = conc.Float
+	Str   = conc.Str
+	Let   = conc.Let
 
-	UnitType = conc.UnitType
-	IntType  = conc.IntType
-	BoolType = conc.BoolType
+	UnitType  = conc.UnitType
+	BoolType  = conc.BoolType
+	IntType   = conc.IntType
+	FloatType = conc.FloatType
+	StrType   = conc.StrType
 )

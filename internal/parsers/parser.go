@@ -136,11 +136,28 @@ func CamelCase(s parsing.State) parsing.State {
 }
 
 var (
+	dec             = decDigits
+	decDigits       = Seq(decDigit, Many(Seq(Option(Word("_")), decDigit)))
 	decDigit        = Range('0', '9')
 	decNonZeroDigit = Range('1', '9')
-	binDigit        = Range('0', '1')
-	octDigit        = Range('0', '7')
-	hexDigit        = Choice(decDigit, Range('a', 'f'), Range('A', 'F'))
+	decPart         = Choice(
+		Word("0"),
+		Seq(Option(Word("0")), decNonZeroDigit, Option(Seq(Option(Word("_")), decDigits))),
+	)
+	expPart = Seq(
+		Option(Choice(Word("e"), Word("E"))),
+		Option(Choice(Word("-"), Word("+"))),
+		decDigits,
+	)
+
+	bin      = Seq(Choice(Word("0b"), Word("0B")), binDigit, Many(Seq(Option(Word("_")), binDigit)))
+	binDigit = Range('0', '1')
+
+	oct      = Seq(Choice(Word("0o"), Word("0O")), octDigit, Many(Seq(Option(Word("_")), octDigit)))
+	octDigit = Range('0', '7')
+
+	hex      = Seq(Choice(Word("0x"), Word("0X")), hexDigit, Many(Seq(Option(Word("_")), hexDigit)))
+	hexDigit = Choice(decDigit, Range('a', 'f'), Range('A', 'F'))
 )
 
 func Int(s parsing.State) parsing.State {
@@ -151,14 +168,17 @@ func Int(s parsing.State) parsing.State {
 	return s
 }
 
-var decDigits = Seq(decDigit, Many(Seq(Option(Word("_")), decDigit)))
-
-var (
-	dec = Choice(decDigits)
-	bin = Seq(Choice(Word("0b"), Word("0B")), binDigit, Many(Seq(Option(Word("_")), binDigit)))
-	oct = Seq(Choice(Word("0o"), Word("0O")), octDigit, Many(Seq(Option(Word("_")), octDigit)))
-	hex = Seq(Choice(Word("0x"), Word("0X")), hexDigit, Many(Seq(Option(Word("_")), hexDigit)))
-)
+func Float(s parsing.State) parsing.State {
+	start := s.Pos()
+	if s = parsing.Atom(Choice(
+		Seq(decPart, expPart),
+		Seq(Word("."), decDigits, Option(expPart)),
+		Seq(decPart, Word("."), Option(decDigits), Option(expPart)),
+	))(s); !s.IsError() {
+		return s.WithSpan(start)
+	}
+	return s
+}
 
 func Str(s parsing.State) parsing.State {
 	start := s.Pos()

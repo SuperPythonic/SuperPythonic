@@ -15,7 +15,8 @@ def f0() -> str:
 def f1() -> str:
 	a: str = "hi"
 	b: int = 42
-	return b
+	c: float = 42.0
+	return c
 `,
 	}
 	for _, text := range texts {

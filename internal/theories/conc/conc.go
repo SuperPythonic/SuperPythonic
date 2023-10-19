@@ -40,32 +40,36 @@ func (v *Var) String() string { return v.Text }
 type Expr interface{ isExpr() }
 
 type (
-	Ref  struct{ Name *Var }
-	Unit struct{}
-	Bool bool
-	Int  struct{ Text string }
-	Str  string
-	Let  struct {
+	Ref   struct{ Name *Var }
+	Unit  struct{}
+	Bool  bool
+	Int   struct{ Text string }
+	Float struct{ Text string }
+	Str   string
+	Let   struct {
 		Name              *Var
 		Type, Value, Body Expr
 	}
 )
 
-func (*Ref) isExpr()  {}
-func (*Unit) isExpr() {}
-func (Bool) isExpr()  {}
-func (*Int) isExpr()  {}
-func (Str) isExpr()   {}
-func (*Let) isExpr()  {}
+func (*Ref) isExpr()   {}
+func (*Unit) isExpr()  {}
+func (Bool) isExpr()   {}
+func (*Int) isExpr()   {}
+func (*Float) isExpr() {}
+func (Str) isExpr()    {}
+func (*Let) isExpr()   {}
 
 type (
-	UnitType struct{}
-	BoolType struct{}
-	IntType  struct{}
-	StrType  struct{}
+	UnitType  struct{}
+	BoolType  struct{}
+	FloatType struct{}
+	IntType   struct{}
+	StrType   struct{}
 )
 
-func (*UnitType) isExpr() {}
-func (*BoolType) isExpr() {}
-func (*IntType) isExpr()  {}
-func (*StrType) isExpr()  {}
+func (*UnitType) isExpr()  {}
+func (*BoolType) isExpr()  {}
+func (*FloatType) isExpr() {}
+func (*IntType) isExpr()   {}
+func (*StrType) isExpr()   {}

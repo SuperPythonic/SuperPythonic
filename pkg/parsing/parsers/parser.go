@@ -27,8 +27,9 @@ var (
 	CamelBack = parsers.CamelBack
 	CamelCase = parsers.CamelCase
 
-	Int = parsers.Int
-	Str = parsers.Str
+	Int   = parsers.Int
+	Float = parsers.Float
+	Str   = parsers.Str
 
 	Seq    = parsers.Seq
 	Choice = parsers.Choice
