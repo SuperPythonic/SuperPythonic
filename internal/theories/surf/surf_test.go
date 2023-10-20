@@ -9,7 +9,7 @@ func TestParse(t *testing.T) {
 	texts := []string{
 		`
 def f0() -> str:
-	return "hi"
+	return ("hi")
 `,
 		`
 def f1() -> str:

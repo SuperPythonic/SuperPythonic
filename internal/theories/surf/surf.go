@@ -37,6 +37,7 @@ func ValueExpr(dst *conc.Expr) parsing.ParserFunc {
 			parsers.OnText(parsers.Float, func(text string) { *dst = &conc.Float{Text: text} }),
 			parsers.OnText(parsers.Int, func(text string) { *dst = &conc.Int{Text: text} }),
 			parsers.OnText(parsers.Str, func(text string) { *dst = conc.Str(text) }),
+			parsers.Seq(parsers.Word("("), ValueExpr(dst), parsers.Word(")")),
 		)(s)
 	}
 }
