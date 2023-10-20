@@ -35,6 +35,7 @@ type Param struct {
 
 type Var struct{ Text string }
 
+func Unbound() *Var           { return &Var{"_"} }
 func (v *Var) String() string { return v.Text }
 
 type Expr interface{ isExpr() }
@@ -56,6 +57,8 @@ type (
 	Ref struct{ Name *Var }
 )
 
+func NewRef(text string) *Ref { return &Ref{&Var{text}} }
+
 func (*Unit) isExpr()  {}
 func (Bool) isExpr()   {}
 func (*Int) isExpr()   {}
@@ -71,6 +74,11 @@ type (
 	FloatType struct{}
 	IntType   struct{}
 	StrType   struct{}
+	FuncType  struct {
+		Name *Var
+		Type Expr
+		Body Expr
+	}
 )
 
 func (*UnitType) isExpr()  {}
@@ -78,3 +86,4 @@ func (*BoolType) isExpr()  {}
 func (*FloatType) isExpr() {}
 func (*IntType) isExpr()   {}
 func (*StrType) isExpr()   {}
+func (*FuncType) isExpr()  {}

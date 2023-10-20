@@ -8,7 +8,7 @@ import (
 func TestParse(t *testing.T) {
 	texts := []string{
 		`
-def f0():
+def f0() -> int -> int:
 	return lambda x: x
 `,
 		`
