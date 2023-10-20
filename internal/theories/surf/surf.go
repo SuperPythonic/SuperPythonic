@@ -17,11 +17,11 @@ func Lowercase(dst **conc.Var) parsing.ParserFunc {
 
 func Type(dst *conc.Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
-		return parsers.Choice(FuncType(dst), PrimaryType(dst))(s)
+		return parsers.Choice(Pi(dst), PrimaryType(dst))(s)
 	}
 }
 
-func FuncType(dst *conc.Expr) parsing.ParserFunc {
+func Pi(dst *conc.Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		f := &conc.FuncType{Name: conc.Unbound()}
 		if s = parsers.Seq(PrimaryType(&f.Type), parsers.Word("->"), Type(&f.Body))(s); !s.IsError() {
