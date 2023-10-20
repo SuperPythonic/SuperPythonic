@@ -20,6 +20,7 @@ type (
 	Float = conc.Float
 	Str   = conc.Str
 	Let   = conc.Let
+	Lam   = conc.Lam
 	Ref   = conc.Ref
 
 	UnitType  = conc.UnitType
@@ -27,4 +28,5 @@ type (
 	IntType   = conc.IntType
 	FloatType = conc.FloatType
 	StrType   = conc.StrType
+	Pi        = conc.Pi
 )
