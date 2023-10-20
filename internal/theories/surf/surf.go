@@ -40,7 +40,7 @@ func PrimaryType(dst *conc.Expr) parsing.ParserFunc {
 			parsers.OnWord("int", func() { *dst = new(conc.IntType) }),
 			parsers.OnWord("str", func() { *dst = new(conc.StrType) }),
 
-			parsers.OnText(IdRef, func(text string) { *dst = conc.NewRef(text) }),
+			IdRef(dst),
 		)(s)
 	}
 }
@@ -56,7 +56,7 @@ func Value(dst *conc.Expr) parsing.ParserFunc {
 			parsers.OnText(parsers.Int, func(text string) { *dst = &conc.Int{Text: text} }),
 			parsers.OnText(parsers.Str, func(text string) { *dst = conc.Str(text) }),
 
-			parsers.OnText(IdRef, func(text string) { *dst = conc.NewRef(text) }),
+			IdRef(dst),
 			parsers.Seq(parsers.Word("("), Value(dst), parsers.Word(")")),
 		)(s)
 	}
@@ -77,7 +77,12 @@ func Lam(dst *conc.Expr) parsing.ParserFunc {
 	}
 }
 
-var IdRef = parsers.Choice(parsers.Lowercase, parsers.CamelCase)
+func IdRef(dst *conc.Expr) parsing.ParserFunc {
+	return parsers.OnText(
+		parsers.Choice(parsers.Lowercase, parsers.CamelCase),
+		func(text string) { *dst = conc.NewRef(text) },
+	)
+}
 
 func Prog(dst *[]conc.Def) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
