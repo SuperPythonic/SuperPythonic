@@ -17,17 +17,11 @@ func Lowercase(dst **conc.Var) parsing.ParserFunc {
 
 func Type(dst *conc.Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
-		return parsers.Choice(Pi(dst), PrimaryType(dst))(s)
-	}
-}
-
-func Pi(dst *conc.Expr) parsing.ParserFunc {
-	return func(s parsing.State) parsing.State {
-		f := &conc.FuncType{Name: conc.Unbound()}
-		if s = parsers.Seq(PrimaryType(&f.Type), parsers.Word("->"), Type(&f.Body))(s); !s.IsError() {
-			*dst = f
-		}
-		return s
+		return parsers.Choice(
+			Pi(dst),
+			PrimaryType(dst),
+			ParenType(dst),
+		)(s)
 	}
 }
 
@@ -39,10 +33,45 @@ func PrimaryType(dst *conc.Expr) parsing.ParserFunc {
 			parsers.OnWord("float", func() { *dst = new(conc.FloatType) }),
 			parsers.OnWord("int", func() { *dst = new(conc.IntType) }),
 			parsers.OnWord("str", func() { *dst = new(conc.StrType) }),
-
 			IdRef(dst),
 		)(s)
 	}
+}
+
+func ParenType(dst *conc.Expr) parsing.ParserFunc {
+	return parsers.Seq(parsers.Word("("), Type(dst), parsers.Word(")"))
+}
+
+func Pi(dst *conc.Expr) parsing.ParserFunc {
+	f := &conc.Pi{Name: conc.Unbound()} // TODO: _tupled
+	return parsers.On(parsers.Seq(PiParams(&f.Type), parsers.Word("->"), Type(&f.Body)), func() { *dst = f })
+}
+
+func PiParams(dst *conc.Expr) parsing.ParserFunc {
+	var types []conc.Expr
+	return parsers.On(
+		parsers.Choice(
+			parsers.Word("()"),
+			PiParamOne(&types),
+			parsers.Seq(
+				parsers.Word("("),
+				PiParamMore(&types),
+				parsers.Many(parsers.Seq(parsers.Word(","), PiParamMore(&types))),
+				parsers.Word(")"),
+			),
+		),
+		func() { *dst = conc.FoldSigma(types...) },
+	)
+}
+
+func PiParamOne(dst *[]conc.Expr) parsing.ParserFunc {
+	var typ conc.Expr
+	return parsers.On(PrimaryType(&typ), func() { *dst = append(*dst, typ) })
+}
+
+func PiParamMore(dst *[]conc.Expr) parsing.ParserFunc {
+	var typ conc.Expr
+	return parsers.On(Type(&typ), func() { *dst = append(*dst, typ) })
 }
 
 func Value(dst *conc.Expr) parsing.ParserFunc {
@@ -55,7 +84,6 @@ func Value(dst *conc.Expr) parsing.ParserFunc {
 			parsers.OnText(parsers.Float, func(text string) { *dst = &conc.Float{Text: text} }),
 			parsers.OnText(parsers.Int, func(text string) { *dst = &conc.Int{Text: text} }),
 			parsers.OnText(parsers.Str, func(text string) { *dst = conc.Str(text) }),
-
 			IdRef(dst),
 			parsers.Seq(parsers.Word("("), Value(dst), parsers.Word(")")),
 		)(s)
@@ -63,18 +91,11 @@ func Value(dst *conc.Expr) parsing.ParserFunc {
 }
 
 func Lam(dst *conc.Expr) parsing.ParserFunc {
-	return func(s parsing.State) parsing.State {
-		l := new(conc.Lam)
-		if s = parsers.Seq(
-			parsers.Word("lambda"),
-			Lowercase(&l.Name),
-			parsers.Word(":"),
-			Value(&l.Body),
-		)(s); !s.IsError() {
-			*dst = l
-		}
-		return s
-	}
+	l := &conc.Lam{Name: conc.Unbound()}
+	return parsers.On(
+		parsers.Seq(parsers.Word("lambda"), parsers.Option(Lowercase(&l.Name)), parsers.Word(":"), Value(&l.Body)),
+		func() { *dst = l },
+	)
 }
 
 func IdRef(dst *conc.Expr) parsing.ParserFunc {
@@ -86,13 +107,7 @@ func IdRef(dst *conc.Expr) parsing.ParserFunc {
 
 func Prog(dst *[]conc.Def) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
-		return parsers.Seq(
-			parsers.Start,
-			parsers.Many(parsers.Newline),
-			parsers.Many(parsers.Choice(FnDef(dst))),
-			parsers.Many(parsers.Newline),
-			parsers.End,
-		)(s)
+		return parsers.Seq(parsers.Start, parsers.Many(parsers.Choice(parsers.Newline, FnDef(dst))), parsers.End)(s)
 	}
 }
 
@@ -147,9 +162,9 @@ func FnBody(dst *conc.Expr) parsing.ParserFunc {
 }
 
 func FnBodyLet(dst *conc.Expr) parsing.ParserFunc {
-	return func(s parsing.State) parsing.State {
-		l := new(conc.Let)
-		if s = parsers.Seq(
+	l := new(conc.Let)
+	return parsers.On(
+		parsers.Seq(
 			Lowercase(&l.Name),
 			parsers.Option(parsers.Seq(parsers.Word(":"), Type(&l.Type))),
 			parsers.Word("="),
@@ -157,9 +172,7 @@ func FnBodyLet(dst *conc.Expr) parsing.ParserFunc {
 			parsers.Newline,
 			parsers.Indent,
 			FnBody(&l.Body),
-		)(s); !s.IsError() {
-			*dst = l
-		}
-		return s
-	}
+		),
+		func() { *dst = l },
+	)
 }

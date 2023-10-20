@@ -8,15 +8,33 @@ import (
 func TestParse(t *testing.T) {
 	texts := []string{
 		`
-def f0() -> int -> int:
+def f0() -> () -> int:
+	return lambda: x
+
+def f1() -> int -> int:
+	return lambda x: x
+
+def f2() -> (int) -> int:
+	return lambda x: x
+
+def f3() -> (int, int) -> int:
+	return lambda x: x
+
+def f4() -> (int, int, str) -> int:
+	return lambda x: x
+
+def f5() -> (int -> str) -> int:
+	return lambda x: x
+
+def f6() -> (int -> str) -> (int -> str):
 	return lambda x: x
 `,
 		`
-def f1() -> str:
+def f() -> str:
 	return ("hi")
 `,
 		`
-def f2() -> str:
+def f() -> str:
 	a: str = "hi"
 	b: int = 42
 	c: float = 42.0

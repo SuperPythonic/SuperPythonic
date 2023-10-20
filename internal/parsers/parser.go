@@ -45,8 +45,10 @@ func Indent(s parsing.State) parsing.State {
 }
 
 func Exit(s parsing.State) parsing.State {
-	Option(Newline)(s)
-	return s.WithExit()
+	if s = Newline(s); !s.IsError() {
+		return s.WithExit()
+	}
+	return s
 }
 
 func Range(from, to rune) parsing.ParserFunc {
