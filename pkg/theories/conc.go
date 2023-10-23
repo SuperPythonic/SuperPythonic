@@ -19,7 +19,6 @@ type (
 	Int   = conc.Int
 	Float = conc.Float
 	Str   = conc.Str
-	Let   = conc.Let
 	Lam   = conc.Lam
 	Ref   = conc.Ref
 
@@ -29,4 +28,7 @@ type (
 	FloatType = conc.FloatType
 	StrType   = conc.StrType
 	FnType    = conc.FnType
+
+	If  = conc.If
+	Let = conc.Let
 )

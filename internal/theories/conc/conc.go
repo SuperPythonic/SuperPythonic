@@ -46,11 +46,7 @@ type (
 	Int   struct{ Text string }
 	Float struct{ Text string }
 	Str   string
-	Let   struct {
-		Name              *Var
-		Type, Value, Body Expr
-	}
-	Lam struct {
+	Lam   struct {
 		Name *Var
 		Body Expr
 	}
@@ -64,7 +60,6 @@ func (Bool) isExpr()   {}
 func (*Int) isExpr()   {}
 func (*Float) isExpr() {}
 func (Str) isExpr()    {}
-func (*Let) isExpr()   {}
 func (*Lam) isExpr()   {}
 func (*Ref) isExpr()   {}
 
@@ -86,3 +81,14 @@ func (*FloatType) isExpr() {}
 func (*IntType) isExpr()   {}
 func (*StrType) isExpr()   {}
 func (*FnType) isExpr()    {}
+
+type (
+	If  struct{ Test, Then, Else Expr }
+	Let struct {
+		Name              *Var
+		Type, Value, Body Expr
+	}
+)
+
+func (*If) isExpr()  {}
+func (*Let) isExpr() {}

@@ -12,7 +12,9 @@ func Parse(text string) (*conc.Prog, parsing.State) {
 }
 
 func Lowercase(dst **conc.Var) parsing.ParserFunc {
-	return parsers.OnText(parsers.Lowercase, func(text string) { *dst = &conc.Var{Text: text} })
+	return func(s parsing.State) parsing.State {
+		return parsers.OnText(parsers.Lowercase, func(text string) { *dst = &conc.Var{Text: text} })(s)
+	}
 }
 
 func Type(dst *conc.Expr) parsing.ParserFunc {
@@ -26,31 +28,43 @@ func Type(dst *conc.Expr) parsing.ParserFunc {
 }
 
 func FnType(dst *conc.Expr) parsing.ParserFunc {
-	f := new(conc.FnType)
-	return parsers.On(parsers.Seq(FnTypeParams(&f.Params), parsers.Word("->"), Type(&f.Body)), func() { *dst = f })
+	return func(s parsing.State) parsing.State {
+		f := new(conc.FnType)
+		return parsers.On(parsers.Seq(
+			FnTypeParams(&f.Params),
+			parsers.Word("->"),
+			Type(&f.Body),
+		), func() { *dst = f })(s)
+	}
 }
 
 func FnTypeParams(dst *[]*conc.Param) parsing.ParserFunc {
-	return parsers.Choice(
-		parsers.Word("()"),
-		FnTypeParamOne(dst),
-		parsers.Seq(
-			parsers.Word("("),
-			FnTypeParamMore(dst),
-			parsers.Many(parsers.Seq(parsers.Word(","), FnTypeParamMore(dst))),
-			parsers.Word(")"),
-		),
-	)
+	return func(s parsing.State) parsing.State {
+		return parsers.Choice(
+			parsers.Word("()"),
+			FnTypeParamOne(dst),
+			parsers.Seq(
+				parsers.Word("("),
+				FnTypeParamMore(dst),
+				parsers.Many(parsers.Seq(parsers.Word(","), FnTypeParamMore(dst))),
+				parsers.Word(")"),
+			),
+		)(s)
+	}
 }
 
 func FnTypeParamOne(dst *[]*conc.Param) parsing.ParserFunc {
-	p := &conc.Param{Name: conc.Unbound()}
-	return parsers.On(PrimaryType(&p.Type), func() { *dst = append(*dst, p) })
+	return func(s parsing.State) parsing.State {
+		p := &conc.Param{Name: conc.Unbound()}
+		return parsers.On(PrimaryType(&p.Type), func() { *dst = append(*dst, p) })(s)
+	}
 }
 
 func FnTypeParamMore(dst *[]*conc.Param) parsing.ParserFunc {
-	p := &conc.Param{Name: conc.Unbound()}
-	return parsers.On(Type(&p.Type), func() { *dst = append(*dst, p) })
+	return func(s parsing.State) parsing.State {
+		p := &conc.Param{Name: conc.Unbound()}
+		return parsers.On(Type(&p.Type), func() { *dst = append(*dst, p) })(s)
+	}
 }
 
 func PrimaryType(dst *conc.Expr) parsing.ParserFunc {
@@ -68,8 +82,44 @@ func PrimaryType(dst *conc.Expr) parsing.ParserFunc {
 
 func Value(dst *conc.Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
+		return parsers.Choice(InlineIf(dst), Lam(dst), PrimaryValue(dst))(s)
+	}
+}
+
+func InlineIf(dst *conc.Expr) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		i := new(conc.If)
+		return parsers.On(
+			parsers.Seq(
+				PrimaryValue(&i.Then),
+				parsers.Word("if"),
+				Value(&i.Test),
+				parsers.Word("else"),
+				Value(&i.Else),
+			),
+			func() { *dst = i },
+		)(s)
+	}
+}
+
+func Lam(dst *conc.Expr) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		l := &conc.Lam{Name: conc.Unbound()}
+		return parsers.On(
+			parsers.Seq(
+				parsers.Word("lambda"),
+				parsers.Option(Lowercase(&l.Name)),
+				parsers.Word(":"),
+				Value(&l.Body),
+			),
+			func() { *dst = l },
+		)(s)
+	}
+}
+
+func PrimaryValue(dst *conc.Expr) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
 		return parsers.Choice(
-			Lam(dst),
 			parsers.OnWord("()", func() { *dst = new(conc.Unit) }),
 			parsers.OnWord("False", func() { *dst = conc.Bool(false) }),
 			parsers.OnWord("True", func() { *dst = conc.Bool(true) }),
@@ -82,19 +132,13 @@ func Value(dst *conc.Expr) parsing.ParserFunc {
 	}
 }
 
-func Lam(dst *conc.Expr) parsing.ParserFunc {
-	l := &conc.Lam{Name: conc.Unbound()}
-	return parsers.On(
-		parsers.Seq(parsers.Word("lambda"), parsers.Option(Lowercase(&l.Name)), parsers.Word(":"), Value(&l.Body)),
-		func() { *dst = l },
-	)
-}
-
 func IdRef(dst *conc.Expr) parsing.ParserFunc {
-	return parsers.OnText(
-		parsers.Choice(parsers.Lowercase, parsers.CamelCase),
-		func(text string) { *dst = conc.NewRef(text) },
-	)
+	return func(s parsing.State) parsing.State {
+		return parsers.OnText(
+			parsers.Choice(parsers.Lowercase, parsers.CamelCase),
+			func(text string) { *dst = conc.NewRef(text) },
+		)(s)
+	}
 }
 
 func Prog(dst *[]conc.Def) parsing.ParserFunc {
@@ -154,17 +198,19 @@ func FnBody(dst *conc.Expr) parsing.ParserFunc {
 }
 
 func FnBodyLet(dst *conc.Expr) parsing.ParserFunc {
-	l := new(conc.Let)
-	return parsers.On(
-		parsers.Seq(
-			Lowercase(&l.Name),
-			parsers.Option(parsers.Seq(parsers.Word(":"), Type(&l.Type))),
-			parsers.Word("="),
-			Value(&l.Value),
-			parsers.Newline,
-			parsers.Indent,
-			FnBody(&l.Body),
-		),
-		func() { *dst = l },
-	)
+	return func(s parsing.State) parsing.State {
+		l := new(conc.Let)
+		return parsers.On(
+			parsers.Seq(
+				Lowercase(&l.Name),
+				parsers.Option(parsers.Seq(parsers.Word(":"), Type(&l.Type))),
+				parsers.Word("="),
+				Value(&l.Value),
+				parsers.Newline,
+				parsers.Indent,
+				FnBody(&l.Body),
+			),
+			func() { *dst = l },
+		)(s)
+	}
 }

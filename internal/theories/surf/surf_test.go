@@ -8,6 +8,10 @@ import (
 func TestParse(t *testing.T) {
 	texts := []string{
 		`
+def f() -> int:
+	return 42 if True else 69
+`,
+		`
 def f0() -> () -> int:
 	return lambda: x
 
