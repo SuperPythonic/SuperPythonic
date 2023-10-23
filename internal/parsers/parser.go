@@ -44,12 +44,7 @@ func Indent(s parsing.State) parsing.State {
 	return parsing.Atom(Seq(parsers...))(s)
 }
 
-func Exit(s parsing.State) parsing.State {
-	if s = Newline(s); !s.IsError() {
-		return s.WithExit()
-	}
-	return s
-}
+func Exit(s parsing.State) parsing.State { return Option(Newline)(s).WithExit() }
 
 func Range(from, to rune) parsing.ParserFunc {
 	if from >= to {

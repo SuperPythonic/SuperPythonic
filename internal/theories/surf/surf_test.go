@@ -8,6 +8,13 @@ import (
 func TestParse(t *testing.T) {
 	texts := []string{
 		`
+def f0() -> int:
+	return if True:
+		42
+	else:
+		69
+`,
+		`
 def f() -> int:
 	return 42 if True else 69
 `,
@@ -45,10 +52,10 @@ def f() -> str:
 	return c
 `,
 	}
-	for _, text := range texts {
+	for i, text := range texts {
 		prog, s := Parse(text)
 		if s.IsError() {
-			t.Fatal(s)
+			t.Fatal(i, s)
 		}
 		fmt.Println(prog)
 	}
