@@ -74,15 +74,9 @@ type (
 	FloatType struct{}
 	IntType   struct{}
 	StrType   struct{}
-	Pi        struct {
-		Name *Var
-		Type Expr
-		Body Expr
-	}
-	Sigma struct {
-		Name *Var
-		Type Expr
-		Body Expr
+	FnType    struct {
+		Params []*Param
+		Body   Expr
 	}
 )
 
@@ -91,13 +85,4 @@ func (*BoolType) isExpr()  {}
 func (*FloatType) isExpr() {}
 func (*IntType) isExpr()   {}
 func (*StrType) isExpr()   {}
-func (*Pi) isExpr()        {}
-func (*Sigma) isExpr()     {}
-
-func FoldSigma(types ...Expr) Expr {
-	ret := Expr(new(UnitType))
-	for _, t := range types {
-		ret = &Sigma{Name: Unbound(), Type: t, Body: ret}
-	}
-	return ret
-}
+func (*FnType) isExpr()    {}

@@ -28,5 +28,5 @@ type (
 	IntType   = conc.IntType
 	FloatType = conc.FloatType
 	StrType   = conc.StrType
-	Pi        = conc.Pi
+	FnType    = conc.FnType
 )

@@ -18,11 +18,39 @@ func Lowercase(dst **conc.Var) parsing.ParserFunc {
 func Type(dst *conc.Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		return parsers.Choice(
-			Pi(dst),
+			FnType(dst),
 			PrimaryType(dst),
-			ParenType(dst),
+			parsers.Seq(parsers.Word("("), Type(dst), parsers.Word(")")),
 		)(s)
 	}
+}
+
+func FnType(dst *conc.Expr) parsing.ParserFunc {
+	f := new(conc.FnType)
+	return parsers.On(parsers.Seq(FnTypeParams(&f.Params), parsers.Word("->"), Type(&f.Body)), func() { *dst = f })
+}
+
+func FnTypeParams(dst *[]*conc.Param) parsing.ParserFunc {
+	return parsers.Choice(
+		parsers.Word("()"),
+		FnTypeParamOne(dst),
+		parsers.Seq(
+			parsers.Word("("),
+			FnTypeParamMore(dst),
+			parsers.Many(parsers.Seq(parsers.Word(","), FnTypeParamMore(dst))),
+			parsers.Word(")"),
+		),
+	)
+}
+
+func FnTypeParamOne(dst *[]*conc.Param) parsing.ParserFunc {
+	p := &conc.Param{Name: conc.Unbound()}
+	return parsers.On(PrimaryType(&p.Type), func() { *dst = append(*dst, p) })
+}
+
+func FnTypeParamMore(dst *[]*conc.Param) parsing.ParserFunc {
+	p := &conc.Param{Name: conc.Unbound()}
+	return parsers.On(Type(&p.Type), func() { *dst = append(*dst, p) })
 }
 
 func PrimaryType(dst *conc.Expr) parsing.ParserFunc {
@@ -36,42 +64,6 @@ func PrimaryType(dst *conc.Expr) parsing.ParserFunc {
 			IdRef(dst),
 		)(s)
 	}
-}
-
-func ParenType(dst *conc.Expr) parsing.ParserFunc {
-	return parsers.Seq(parsers.Word("("), Type(dst), parsers.Word(")"))
-}
-
-func Pi(dst *conc.Expr) parsing.ParserFunc {
-	f := &conc.Pi{Name: conc.Unbound()} // TODO: _tupled
-	return parsers.On(parsers.Seq(PiParams(&f.Type), parsers.Word("->"), Type(&f.Body)), func() { *dst = f })
-}
-
-func PiParams(dst *conc.Expr) parsing.ParserFunc {
-	var types []conc.Expr
-	return parsers.On(
-		parsers.Choice(
-			parsers.Word("()"),
-			PiParamOne(&types),
-			parsers.Seq(
-				parsers.Word("("),
-				PiParamMore(&types),
-				parsers.Many(parsers.Seq(parsers.Word(","), PiParamMore(&types))),
-				parsers.Word(")"),
-			),
-		),
-		func() { *dst = conc.FoldSigma(types...) },
-	)
-}
-
-func PiParamOne(dst *[]conc.Expr) parsing.ParserFunc {
-	var typ conc.Expr
-	return parsers.On(PrimaryType(&typ), func() { *dst = append(*dst, typ) })
-}
-
-func PiParamMore(dst *[]conc.Expr) parsing.ParserFunc {
-	var typ conc.Expr
-	return parsers.On(Type(&typ), func() { *dst = append(*dst, typ) })
 }
 
 func Value(dst *conc.Expr) parsing.ParserFunc {
