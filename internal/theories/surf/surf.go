@@ -220,6 +220,7 @@ func FnBody(dst *conc.Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		return parsers.Choice(
 			FnBodyLet(dst),
+			FnBodyUnitLet(dst),
 			parsers.Seq(parsers.Word("return"), parsers.Option(Value(dst))),
 		)(s)
 	}
@@ -238,6 +239,16 @@ func FnBodyLet(dst *conc.Expr) parsing.ParserFunc {
 				parsers.Indent,
 				FnBody(&l.Body),
 			),
+			func() { *dst = l },
+		)(s)
+	}
+}
+
+func FnBodyUnitLet(dst *conc.Expr) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		l := new(conc.UnitLet)
+		return parsers.On(
+			parsers.Seq(Value(&l.Value), parsers.Newline, parsers.Indent, FnBody(&l.Body)),
 			func() { *dst = l },
 		)(s)
 	}

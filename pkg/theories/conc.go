@@ -29,6 +29,7 @@ type (
 	StrType   = conc.StrType
 	FnType    = conc.FnType
 
-	If  = conc.If
-	Let = conc.Let
+	If      = conc.If
+	Let     = conc.Let
+	UnitLet = conc.UnitLet
 )

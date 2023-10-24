@@ -9,6 +9,11 @@ func TestParse(t *testing.T) {
 	texts := []string{
 		`
 def f0() -> int:
+	42
+	return 69
+`,
+		`
+def f0() -> int:
 	return if True:
 		42
 	else:

@@ -88,7 +88,9 @@ type (
 		Name              *Var
 		Type, Value, Body Expr
 	}
+	UnitLet struct{ Value, Body Expr }
 )
 
-func (*If) isExpr()  {}
-func (*Let) isExpr() {}
+func (*If) isExpr()      {}
+func (*Let) isExpr()     {}
+func (*UnitLet) isExpr() {}
