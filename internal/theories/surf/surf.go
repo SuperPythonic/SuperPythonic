@@ -13,7 +13,8 @@ func Parse(text string) (*conc.Prog, parsing.State) {
 
 func Lowercase(dst **conc.Var) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
-		return parsers.OnText(parsers.Lowercase, func(text string) { *dst = &conc.Var{Text: text} })(s)
+		var span parsing.Span
+		return parsers.On(parsers.Lowercase(&span), func() { *dst = &conc.Var{Text: s.Text(span)} })(s)
 	}
 }
 
@@ -139,13 +140,15 @@ func Lam(dst *conc.Expr) parsing.ParserFunc {
 
 func PrimaryValue(dst *conc.Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
+		var span parsing.Span
+		start := s.Point()
 		return parsers.Choice(
-			parsers.OnWord("()", func() { *dst = new(conc.Unit) }),
-			parsers.OnWord("False", func() { *dst = conc.Bool(false) }),
-			parsers.OnWord("True", func() { *dst = conc.Bool(true) }),
-			parsers.OnText(parsers.Float, func(text string) { *dst = &conc.Float{Text: text} }),
-			parsers.OnText(parsers.Int, func(text string) { *dst = &conc.Int{Text: text} }),
-			parsers.OnText(parsers.Str, func(text string) { *dst = conc.Str(text) }),
+			parsers.OnWord("()", func() { *dst = &conc.Unit{Span: s.Span(start)} }),
+			parsers.OnWord("False", func() { *dst = &conc.Bool{Span: s.Span(start), Value: false} }),
+			parsers.OnWord("True", func() { *dst = &conc.Bool{Span: s.Span(start), Value: true} }),
+			parsers.On(parsers.Float(&span), func() { *dst = &conc.Float{Span: span} }),
+			parsers.On(parsers.Int(&span), func() { *dst = &conc.Int{Span: span} }),
+			parsers.On(parsers.Str(&span), func() { *dst = conc.Str{Span: span} }),
 			IdRef(dst),
 			parsers.Seq(parsers.Word("("), Value(dst), parsers.Word(")")),
 		)(s)
@@ -154,9 +157,10 @@ func PrimaryValue(dst *conc.Expr) parsing.ParserFunc {
 
 func IdRef(dst *conc.Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
-		return parsers.OnText(
-			parsers.Choice(parsers.Lowercase, parsers.CamelCase),
-			func(text string) { *dst = conc.NewRef(text) },
+		var span parsing.Span
+		return parsers.On(
+			parsers.Choice(parsers.Lowercase(&span), parsers.CamelCase(&span)),
+			func() { *dst = conc.NewRef(span, s.Text(span)) },
 		)(s)
 	}
 }

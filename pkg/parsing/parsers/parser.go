@@ -8,7 +8,6 @@ var (
 
 	OnState = parsers.OnState
 	On      = parsers.On
-	OnText  = parsers.OnText
 	OnWord  = parsers.OnWord
 
 	Start = parsers.Start

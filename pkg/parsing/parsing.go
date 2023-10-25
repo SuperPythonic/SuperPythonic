@@ -1,13 +1,19 @@
 package parsing
 
-type Span struct{ Start, End, Line, Col int }
+type Point struct{ Pos, Line, Col int }
+
+type (
+	Spanner interface{ StartEnd() Span }
+	Span    struct{ Start, End Point }
+)
+
+func (s Span) StartEnd() Span { return s }
 
 type State interface {
 	Options() Options
 
-	Pos() int
-	Dump() (pos, ln, col int, span *Span)
-	Restore(pos, ln, col int, span *Span)
+	Point() Point
+	Restore(p Point)
 
 	Peek() (rune, bool)
 	Next() (rune, bool)
@@ -17,10 +23,10 @@ type State interface {
 	IsSOI() bool
 	IsEOI() bool
 
-	WithSpan(start int) State
+	WithOK() State
 	WithError(start int) State
-	Span() *Span
-	Text() string
+	Span(start Point) Span
+	Text(sp Span) string
 
 	IsAtomic() bool
 	SetAtomic(atomic bool)

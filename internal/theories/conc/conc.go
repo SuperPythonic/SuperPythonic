@@ -1,5 +1,7 @@
 package conc
 
+import "github.com/SuperPythonic/SuperPythonic/pkg/parsing"
+
 type Prog struct{ Defs []Def }
 
 type (
@@ -38,64 +40,60 @@ type Var struct{ Text string }
 func Unbound() *Var           { return &Var{"_"} }
 func (v *Var) String() string { return v.Text }
 
-type Expr interface{ isExpr() }
+type Expr interface{ parsing.Spanner }
 
 type (
-	Unit  struct{}
-	Bool  bool
-	Int   struct{ Text string }
-	Float struct{ Text string }
-	Str   string
+	Unit struct{ parsing.Span }
+	Bool struct {
+		parsing.Span
+		Value bool
+	}
+	Int   struct{ parsing.Span }
+	Float struct{ parsing.Span }
+	Str   struct{ parsing.Span }
 	Lam   struct {
+		parsing.Span
 		Name *Var
 		Body Expr
 	}
-	Ref struct{ Name *Var }
+	Ref struct {
+		parsing.Span
+		Name *Var
+	}
 )
 
-func NewRef(text string) *Ref { return &Ref{&Var{text}} }
-
-func (*Unit) isExpr()  {}
-func (Bool) isExpr()   {}
-func (*Int) isExpr()   {}
-func (*Float) isExpr() {}
-func (Str) isExpr()    {}
-func (*Lam) isExpr()   {}
-func (*Ref) isExpr()   {}
+func NewRef(span parsing.Span, text string) *Ref { return &Ref{Span: span, Name: &Var{text}} }
 
 type (
-	UnitType  struct{}
-	BoolType  struct{}
-	FloatType struct{}
-	IntType   struct{}
-	StrType   struct{}
+	UnitType  struct{ parsing.Span }
+	BoolType  struct{ parsing.Span }
+	FloatType struct{ parsing.Span }
+	IntType   struct{ parsing.Span }
+	StrType   struct{ parsing.Span }
 	FnType    struct {
+		parsing.Span
 		Params []*Param
 		Body   Expr
 	}
 )
 
-func (*UnitType) isExpr()  {}
-func (*BoolType) isExpr()  {}
-func (*FloatType) isExpr() {}
-func (*IntType) isExpr()   {}
-func (*StrType) isExpr()   {}
-func (*FnType) isExpr()    {}
-
 type (
 	App struct {
+		parsing.Span
 		Fn   Expr
 		Args []Expr
 	}
-	If  struct{ Test, Then, Else Expr }
+	If struct {
+		parsing.Span
+		Test, Then, Else Expr
+	}
 	Let struct {
+		parsing.Span
 		Name              *Var
 		Type, Value, Body Expr
 	}
-	UnitLet struct{ Value, Body Expr }
+	UnitLet struct {
+		parsing.Span
+		Value, Body Expr
+	}
 )
-
-func (*App) isExpr()     {}
-func (*If) isExpr()      {}
-func (*Let) isExpr()     {}
-func (*UnitLet) isExpr() {}

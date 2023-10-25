@@ -9,14 +9,13 @@ import (
 const noErrAt = -1
 
 type State struct {
-	opts         parsing.Options
-	text         []rune
-	pos, ln, col int
-	cur          *parsing.Span
-	errAt        int
-	atomic       bool
-	depth        int
-	indent       string
+	opts   parsing.Options
+	text   []rune
+	point  parsing.Point
+	errAt  int
+	atomic bool
+	depth  int
+	indent string
 }
 
 func NewState(text string) *State { return NewStateWith(text, new(opts)) }
@@ -25,8 +24,7 @@ func NewStateWith(text string, opt parsing.Options) *State {
 	return &State{
 		opts:   opt,
 		text:   []rune(text),
-		ln:     1,
-		col:    1,
+		point:  parsing.Point{Line: 1, Col: 1},
 		errAt:  noErrAt,
 		indent: strings.Repeat(string(opt.Indent()), opt.IndentWordN()),
 	}
@@ -49,30 +47,21 @@ func On(parser parsing.ParserFunc, f func()) parsing.ParserFunc {
 	return OnState(parser, func(parsing.State) { f() })
 }
 
-func OnText(parser parsing.ParserFunc, f func(text string)) parsing.ParserFunc {
-	return OnState(parser, func(s parsing.State) { f(s.Text()) })
-}
-
 func OnWord(w string, f func()) parsing.ParserFunc { return On(Word(w), f) }
 
 func (s *State) Options() parsing.Options { return s.opts }
 
-func (s *State) Pos() int { return s.pos }
-
-func (s *State) Dump() (pos, ln, col int, span *parsing.Span) { return s.pos, s.ln, s.col, s.cur }
-func (s *State) Restore(pos, ln, col int, span *parsing.Span) {
-	s.pos = pos
-	s.ln = ln
-	s.col = col
-	s.cur = span
+func (s *State) Point() parsing.Point { return s.point }
+func (s *State) Restore(p parsing.Point) {
+	s.point = p
 	s.errAt = noErrAt
 }
 
 func (s *State) Peek() (rune, bool) {
-	if s.pos >= len(s.text) {
+	if s.point.Pos >= len(s.text) {
 		return 0, false
 	}
-	return s.text[s.pos], true
+	return s.text[s.point.Pos], true
 }
 
 func (s *State) Next() (rune, bool) {
@@ -81,12 +70,12 @@ func (s *State) Next() (rune, bool) {
 		return 0, false
 	}
 
-	s.pos++
-	s.col++
+	s.point.Pos++
+	s.point.Col++
 
 	if r == s.opts.Newline() {
-		s.ln++
-		s.col = 1
+		s.point.Line++
+		s.point.Col = 1
 	}
 
 	return r, true
@@ -100,31 +89,24 @@ func (s *State) Eat(e rune) bool {
 }
 
 func (s *State) IsError() bool { return s.errAt != noErrAt }
+func (s *State) IsSOI() bool   { return s.point.Pos == 0 }
+func (s *State) IsEOI() bool   { return s.point.Pos == len(s.text) }
 
-func (s *State) IsSOI() bool { return s.pos == 0 }
-
-func (s *State) IsEOI() bool { return s.pos == len(s.text) }
-
-func (s *State) WithSpan(start int) parsing.State {
-	s.cur = &parsing.Span{
-		Start: start,
-		End:   s.pos,
-		Line:  s.ln,
-		Col:   s.col - (s.pos - start),
-	}
+func (s *State) WithOK() parsing.State {
 	s.errAt = noErrAt
 	return s
 }
 
 func (s *State) WithError(start int) parsing.State {
-	s.cur = nil
 	s.errAt = start
 	return s
 }
 
-func (s *State) Span() *parsing.Span { return s.cur }
+func (s *State) Span(start parsing.Point) parsing.Span {
+	return parsing.Span{Start: start, End: s.Point()}
+}
 
-func (s *State) Text() string { return string(s.text[s.cur.Start:s.cur.End]) }
+func (s *State) Text(sp parsing.Span) string { return string(s.text[sp.Start.Pos:sp.End.Pos]) }
 
 func (s *State) IsAtomic() bool        { return s.atomic }
 func (s *State) SetAtomic(atomic bool) { s.atomic = atomic }
@@ -147,7 +129,7 @@ func (s *State) Depth() int               { return s.depth }
 func (s *State) WithEntry() parsing.State { s.depth++; return s }
 func (s *State) WithExit() parsing.State {
 	if s.depth == 0 {
-		return s.WithError(s.Pos())
+		return s.WithError(s.point.Pos)
 	}
 	s.depth--
 	return s

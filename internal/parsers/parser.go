@@ -9,14 +9,14 @@ import (
 
 func Start(s parsing.State) parsing.State {
 	if !s.IsSOI() {
-		return s.WithError(s.Pos())
+		return s.WithError(s.Point().Pos)
 	}
 	return s
 }
 
 func End(s parsing.State) parsing.State {
 	if !s.IsEOI() {
-		return s.WithError(s.Pos())
+		return s.WithError(s.Point().Pos)
 	}
 	return s
 }
@@ -53,31 +53,31 @@ func Range(from, to rune) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		r, ok := s.Peek()
 		if !ok {
-			return s.WithError(s.Pos())
+			return s.WithError(s.Point().Pos)
 		}
 		if from <= r && r <= to {
 			s.Eat(r)
 			return s
 		}
-		return s.WithError(s.Pos())
+		return s.WithError(s.Point().Pos)
 	}
 }
 
 func Word(w string) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
-		start := s.Pos()
+		start := s.Point().Pos
 		for _, c := range w {
 			if !s.Eat(c) {
 				return s.WithError(start)
 			}
 		}
-		return s.WithSpan(start)
+		return s.WithOK()
 	}
 }
 
-func id(isValid func(r rune) bool) parsing.ParserFunc {
+func id(dst *parsing.Span, isValid func(r rune) bool) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
-		start := s.Pos()
+		start := s.Point()
 		first := true
 
 		for {
@@ -98,38 +98,53 @@ func id(isValid func(r rune) bool) parsing.ParserFunc {
 			s.Eat(r)
 		}
 
-		if start == s.Pos() {
+		if start := start.Pos; start == s.Point().Pos {
 			return s.WithError(start)
 		}
-		return s.WithSpan(start)
+
+		*dst = s.Span(start)
+		return s.WithOK()
 	}
 }
 
-var (
-	Lowercase = id(func(r rune) bool { return unicode.IsLower(r) || r == '_' })
-	Uppercase = id(func(r rune) bool { return unicode.IsUpper(r) || r == '_' })
-)
-
-func CamelBack(s parsing.State) parsing.State {
-	first := true
-	return id(func(r rune) bool {
-		if first {
-			first = false
-			return unicode.IsLower(r)
-		}
-		return unicode.IsLetter(r)
-	})(s)
+func Lowercase(dst *parsing.Span) parsing.ParserFunc {
+	return id(dst, func(r rune) bool { return unicode.IsLower(r) || r == '_' })
 }
 
-func CamelCase(s parsing.State) parsing.State {
-	first := true
-	return id(func(r rune) bool {
-		if first {
-			first = false
-			return unicode.IsUpper(r)
-		}
-		return unicode.IsLetter(r)
-	})(s)
+func Uppercase(dst *parsing.Span) parsing.ParserFunc {
+	return id(dst, func(r rune) bool { return unicode.IsUpper(r) || r == '_' })
+}
+
+func CamelBack(dst *parsing.Span) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		first := true
+		return id(
+			dst,
+			func(r rune) bool {
+				if first {
+					first = false
+					return unicode.IsLower(r)
+				}
+				return unicode.IsLetter(r)
+			},
+		)(s)
+	}
+}
+
+func CamelCase(dst *parsing.Span) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		first := true
+		return id(
+			dst,
+			func(r rune) bool {
+				if first {
+					first = false
+					return unicode.IsUpper(r)
+				}
+				return unicode.IsLetter(r)
+			},
+		)(s)
+	}
 }
 
 var (
@@ -157,32 +172,41 @@ var (
 	hexDigit = Choice(decDigit, Range('a', 'f'), Range('A', 'F'))
 )
 
-func Int(s parsing.State) parsing.State {
-	start := s.Pos()
-	if s = parsing.Atom(Choice(dec, bin, oct, hex))(s); !s.IsError() {
-		s.WithSpan(start)
+func Int(dst *parsing.Span) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		start := s.Point()
+		if s = parsing.Atom(Choice(dec, bin, oct, hex))(s); !s.IsError() {
+			*dst = s.Span(start)
+			return s.WithOK()
+		}
+		return s
 	}
-	return s
 }
 
-func Float(s parsing.State) parsing.State {
-	start := s.Pos()
-	if s = parsing.Atom(Choice(
-		Seq(decPart, expPart),
-		Seq(Word("."), decDigits, Option(expPart)),
-		Seq(decPart, Word("."), Option(decDigits), Option(expPart)),
-	))(s); !s.IsError() {
-		return s.WithSpan(start)
+func Float(dst *parsing.Span) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		start := s.Point()
+		if s = parsing.Atom(Choice(
+			Seq(decPart, expPart),
+			Seq(Word("."), decDigits, Option(expPart)),
+			Seq(decPart, Word("."), Option(decDigits), Option(expPart)),
+		))(s); !s.IsError() {
+			*dst = s.Span(start)
+			return s.WithOK()
+		}
+		return s
 	}
-	return s
 }
 
-func Str(s parsing.State) parsing.State {
-	start := s.Pos()
-	if s = parsing.Atom(Seq(Word(`"`), Many(Choice(unescaped, escaped)), Word(`"`)))(s); !s.IsError() {
-		s.WithSpan(start)
+func Str(dst *parsing.Span) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		start := s.Point()
+		if s = parsing.Atom(Seq(Word(`"`), Many(Choice(unescaped, escaped)), Word(`"`)))(s); !s.IsError() {
+			*dst = s.Span(start)
+			return s.WithOK()
+		}
+		return s
 	}
-	return s
 }
 
 var (
@@ -221,29 +245,28 @@ func Choice(parsers ...parsing.ParserFunc) parsing.ParserFunc {
 		panic("at least 1 choice expected")
 	}
 	return func(s parsing.State) parsing.State {
-		pos, ln, col, prev := s.Dump()
+		start := s.Point()
 		// TODO: Collect all failed states for error messages.
 		for _, parser := range parsers {
 			if s = parser(s); !s.IsError() {
 				return s
 			}
-			s.Restore(pos, ln, col, prev)
+			s.Restore(start)
 		}
-		return s.WithError(pos)
+		return s.WithError(start.Pos)
 	}
 }
 
 func More(parser parsing.ParserFunc) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		var (
-			pos, ln, col int
-			prev         *parsing.Span
-			hasOne       bool
+			start  parsing.Point
+			hasOne bool
 		)
 		for {
-			pos, ln, col, prev = s.Dump()
+			start = s.Point()
 			if s = parser(s); s.IsError() {
-				s.Restore(pos, ln, col, prev)
+				s.Restore(start)
 				break
 			}
 			if s.IsEOI() {
@@ -253,7 +276,7 @@ func More(parser parsing.ParserFunc) parsing.ParserFunc {
 			hasOne = true
 		}
 		if !hasOne {
-			return s.WithError(pos)
+			return s.WithError(start.Pos)
 		}
 		return s
 	}
@@ -261,14 +284,11 @@ func More(parser parsing.ParserFunc) parsing.ParserFunc {
 
 func Many(parser parsing.ParserFunc) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
-		var (
-			pos, ln, col int
-			prev         *parsing.Span
-		)
+		var start parsing.Point
 		for {
-			pos, ln, col, prev = s.Dump()
+			start = s.Point()
 			if s = parser(s); s.IsError() {
-				s.Restore(pos, ln, col, prev)
+				s.Restore(start)
 				break
 			}
 			if s.IsEOI() {
@@ -282,9 +302,9 @@ func Many(parser parsing.ParserFunc) parsing.ParserFunc {
 
 func Option(parser parsing.ParserFunc) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
-		pos, ln, col, prev := s.Dump()
+		start := s.Point()
 		if s = parser(s); s.IsError() {
-			s.Restore(pos, ln, col, prev)
+			s.Restore(start)
 		}
 		return s
 	}
@@ -297,7 +317,7 @@ func Times(parser parsing.ParserFunc, n int) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		for i := 0; i < n; i++ {
 			if s = parser(s); s.IsError() {
-				return s.WithError(s.Pos())
+				return s.WithError(s.Point().Pos)
 			}
 		}
 		return s
@@ -310,15 +330,14 @@ func Occur(parser parsing.ParserFunc, from, to int) parsing.ParserFunc {
 	}
 	return func(s parsing.State) parsing.State {
 		var (
-			start        = s.Pos()
-			pos, ln, col int
-			prev         *parsing.Span
+			start = s.Point().Pos
+			prev  parsing.Point
+			n     int
 		)
-		var n int
 		for {
-			pos, ln, col, prev = s.Dump()
+			prev = s.Point()
 			if s = parser(s); s.IsError() {
-				s.Restore(pos, ln, col, prev)
+				s.Restore(prev)
 				break
 			}
 			n++
@@ -332,14 +351,14 @@ func Occur(parser parsing.ParserFunc, from, to int) parsing.ParserFunc {
 
 func Not(parser parsing.ParserFunc) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
-		pos, ln, col, prev := s.Dump()
+		start := s.Point()
 		s = parser(s)
 		notMatched := s.IsError()
-		s.Restore(pos, ln, col, prev)
+		s.Restore(start)
 		if notMatched {
 			s.Next()
 			return s
 		}
-		return s.WithError(pos)
+		return s.WithError(start.Pos)
 	}
 }
