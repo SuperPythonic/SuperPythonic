@@ -83,6 +83,10 @@ func (*StrType) isExpr()   {}
 func (*FnType) isExpr()    {}
 
 type (
+	App struct {
+		Fn   Expr
+		Args []Expr
+	}
 	If  struct{ Test, Then, Else Expr }
 	Let struct {
 		Name              *Var
@@ -91,6 +95,7 @@ type (
 	UnitLet struct{ Value, Body Expr }
 )
 
+func (*App) isExpr()     {}
 func (*If) isExpr()      {}
 func (*Let) isExpr()     {}
 func (*UnitLet) isExpr() {}

@@ -91,6 +91,21 @@ func Value(dst *conc.Expr) parsing.ParserFunc {
 	}
 }
 
+func If(dst *conc.Expr) parsing.ParserFunc {
+	return func(s parsing.State) parsing.State {
+		i := new(conc.If)
+		return parsers.On(
+			parsers.Seq(
+				parsers.Word("if"), Value(&i.Test), parsers.Word(":"),
+				parsers.Entry, Value(&i.Then), parsers.Exit,
+				parsers.Indent, parsers.Word("else"), parsers.Word(":"),
+				parsers.Entry, Value(&i.Else), parsers.Exit,
+			),
+			func() { *dst = i },
+		)(s)
+	}
+}
+
 func InlineIf(dst *conc.Expr) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		i := new(conc.If)
@@ -101,29 +116,6 @@ func InlineIf(dst *conc.Expr) parsing.ParserFunc {
 				Value(&i.Test),
 				parsers.Word("else"),
 				Value(&i.Else),
-			),
-			func() { *dst = i },
-		)(s)
-	}
-}
-
-func If(dst *conc.Expr) parsing.ParserFunc {
-	return func(s parsing.State) parsing.State {
-		i := new(conc.If)
-		return parsers.On(
-			parsers.Seq(
-				parsers.Word("if"),
-				Value(&i.Test),
-				parsers.Word(":"),
-				parsers.Entry,
-				Value(&i.Then),
-				parsers.Exit,
-				parsers.Indent,
-				parsers.Word("else"),
-				parsers.Word(":"),
-				parsers.Entry,
-				Value(&i.Else),
-				parsers.Exit,
 			),
 			func() { *dst = i },
 		)(s)
