@@ -6,13 +6,11 @@ import (
 	"github.com/SuperPythonic/SuperPythonic/pkg/parsing"
 )
 
-const noErrAt = -1
-
 type State struct {
 	opts   parsing.Options
 	text   []rune
 	point  parsing.Point
-	errAt  int
+	isErr  bool
 	atomic bool
 	depth  int
 	indent string
@@ -25,7 +23,6 @@ func NewStateWith(text string, opt parsing.Options) *State {
 		opts:   opt,
 		text:   []rune(text),
 		point:  parsing.Point{Line: 1, Col: 1},
-		errAt:  noErrAt,
 		indent: strings.Repeat(string(opt.Indent()), opt.IndentWordN()),
 	}
 }
@@ -54,7 +51,7 @@ func (s *State) Options() parsing.Options { return s.opts }
 func (s *State) Point() parsing.Point { return s.point }
 func (s *State) Restore(p parsing.Point) {
 	s.point = p
-	s.errAt = noErrAt
+	s.isErr = false
 }
 
 func (s *State) Peek() (rune, bool) {
@@ -88,17 +85,17 @@ func (s *State) Eat(e rune) bool {
 	return false
 }
 
-func (s *State) IsError() bool { return s.errAt != noErrAt }
+func (s *State) IsError() bool { return s.isErr }
 func (s *State) IsSOI() bool   { return s.point.Pos == 0 }
 func (s *State) IsEOI() bool   { return s.point.Pos == len(s.text) }
 
 func (s *State) WithOK() parsing.State {
-	s.errAt = noErrAt
+	s.isErr = false
 	return s
 }
 
-func (s *State) WithError(start int) parsing.State {
-	s.errAt = start
+func (s *State) WithError() parsing.State {
+	s.isErr = true
 	return s
 }
 
@@ -129,7 +126,7 @@ func (s *State) Depth() int               { return s.depth }
 func (s *State) WithEntry() parsing.State { s.depth++; return s }
 func (s *State) WithExit() parsing.State {
 	if s.depth == 0 {
-		return s.WithError(s.point.Pos)
+		return s.WithError()
 	}
 	s.depth--
 	return s

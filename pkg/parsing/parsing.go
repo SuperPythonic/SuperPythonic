@@ -24,7 +24,7 @@ type State interface {
 	IsEOI() bool
 
 	WithOK() State
-	WithError(start int) State
+	WithError() State
 	Span(start Point) Span
 	Text(sp Span) string
 

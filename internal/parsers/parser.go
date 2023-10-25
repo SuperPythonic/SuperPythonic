@@ -9,14 +9,14 @@ import (
 
 func Start(s parsing.State) parsing.State {
 	if !s.IsSOI() {
-		return s.WithError(s.Point().Pos)
+		return s.WithError()
 	}
 	return s
 }
 
 func End(s parsing.State) parsing.State {
 	if !s.IsEOI() {
-		return s.WithError(s.Point().Pos)
+		return s.WithError()
 	}
 	return s
 }
@@ -53,22 +53,21 @@ func Range(from, to rune) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		r, ok := s.Peek()
 		if !ok {
-			return s.WithError(s.Point().Pos)
+			return s.WithError()
 		}
 		if from <= r && r <= to {
 			s.Eat(r)
 			return s
 		}
-		return s.WithError(s.Point().Pos)
+		return s.WithError()
 	}
 }
 
 func Word(w string) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
-		start := s.Point().Pos
 		for _, c := range w {
 			if !s.Eat(c) {
-				return s.WithError(start)
+				return s.WithError()
 			}
 		}
 		return s.WithOK()
@@ -98,8 +97,8 @@ func id(dst *parsing.Span, isValid func(r rune) bool) parsing.ParserFunc {
 			s.Eat(r)
 		}
 
-		if start := start.Pos; start == s.Point().Pos {
-			return s.WithError(start)
+		if start.Pos == s.Point().Pos {
+			return s.WithError()
 		}
 
 		*dst = s.Span(start)
@@ -253,7 +252,7 @@ func Choice(parsers ...parsing.ParserFunc) parsing.ParserFunc {
 			}
 			s.Restore(start)
 		}
-		return s.WithError(start.Pos)
+		return s.WithError()
 	}
 }
 
@@ -276,7 +275,7 @@ func More(parser parsing.ParserFunc) parsing.ParserFunc {
 			hasOne = true
 		}
 		if !hasOne {
-			return s.WithError(start.Pos)
+			return s.WithError()
 		}
 		return s
 	}
@@ -317,7 +316,7 @@ func Times(parser parsing.ParserFunc, n int) parsing.ParserFunc {
 	return func(s parsing.State) parsing.State {
 		for i := 0; i < n; i++ {
 			if s = parser(s); s.IsError() {
-				return s.WithError(s.Point().Pos)
+				return s.WithError()
 			}
 		}
 		return s
@@ -330,9 +329,8 @@ func Occur(parser parsing.ParserFunc, from, to int) parsing.ParserFunc {
 	}
 	return func(s parsing.State) parsing.State {
 		var (
-			start = s.Point().Pos
-			prev  parsing.Point
-			n     int
+			prev parsing.Point
+			n    int
 		)
 		for {
 			prev = s.Point()
@@ -345,7 +343,7 @@ func Occur(parser parsing.ParserFunc, from, to int) parsing.ParserFunc {
 		if from <= n && n <= to {
 			return s
 		}
-		return s.WithError(start)
+		return s.WithError()
 	}
 }
 
@@ -359,6 +357,6 @@ func Not(parser parsing.ParserFunc) parsing.ParserFunc {
 			s.Next()
 			return s
 		}
-		return s.WithError(start.Pos)
+		return s.WithError()
 	}
 }
